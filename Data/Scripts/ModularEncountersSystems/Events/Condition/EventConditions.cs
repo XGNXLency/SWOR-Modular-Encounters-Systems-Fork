@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.API;
@@ -73,6 +73,10 @@ namespace ModularEncountersSystems.Events.Condition
         public bool CheckMainEventDaysPassed;
         public int DaysPassed;
 
+        public bool UseDateTimeHourRange;
+        public int MinDateTimeHour;
+        public int MaxDateTimeHour;
+
         public bool UseAnyPassingCondition;
 
         public Dictionary<string, Action<string, object>> EditorReference;
@@ -89,6 +93,9 @@ namespace ModularEncountersSystems.Events.Condition
             AllowAnyFalseBoolean = false;
             CheckMainEventDaysPassed = false;
             DaysPassed = 1;
+            UseDateTimeHourRange = false;
+            MinDateTimeHour = -1;
+            MaxDateTimeHour = -1;
             UseAnyPassingCondition = false;
 
             CheckCustomCounters = false;
@@ -157,6 +164,9 @@ namespace ModularEncountersSystems.Events.Condition
                 {"ThreatScoreDistanceFromCoords", (s, o) => TagParse.TagIntCheck(s, ref ThreatScoreDistanceFromVector3) },
                 {"ThreatScoreType", (s, o) => TagParse.TagThreatScoreTypeEnumCheck(s, ref ThreatScoreType) },
                 {"ThreatScoreGridConfiguration", (s, o) => TagParse.TagGridConfigurationCheck(s, ref ThreatScoreGridConfiguration) },
+                {"UseDateTimeHourRange", (s, o) => TagParse.TagBoolCheck(s, ref UseDateTimeHourRange) },
+                {"MinDateTimeHour", (s, o) => TagParse.TagIntCheck(s, ref MinDateTimeHour) },
+                {"MaxDateTimeHour", (s, o) => TagParse.TagIntCheck(s, ref MaxDateTimeHour) },
 
                 
             };
@@ -533,6 +543,22 @@ namespace ModularEncountersSystems.Events.Condition
 
 
 
+
+            if (Profile.UseDateTimeHourRange)
+            {
+                usedConditions++;
+
+                var serverTime = DateTime.Now;
+                bool failedCheck = false;
+
+                if ((Profile.MinDateTimeHour > -1 && serverTime.Hour < Profile.MinDateTimeHour) || (Profile.MaxDateTimeHour > -1 && serverTime.Hour > Profile.MaxDateTimeHour))
+                {
+                    failedCheck = true;
+                }
+
+                if (!failedCheck)
+                    satisfiedConditions++;
+            }
 
             //Date thingy
 
