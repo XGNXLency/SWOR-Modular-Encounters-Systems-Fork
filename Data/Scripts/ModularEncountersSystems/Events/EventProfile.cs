@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Configuration;
+using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Logging;
 using ModularEncountersSystems.Helpers;
 using Sandbox.Game;
@@ -73,10 +73,15 @@ namespace ModularEncountersSystems.Events
                 {"StartsReady", (s, o) => TagParse.TagBoolCheck(s, ref StartsReady) },
                 {"PersistantConditionIds", (s, o) => TagParse.TagStringListCheck(s, ref PersistantConditionIds) },
                 {"ConditionIds", (s, o) => TagParse.TagStringListCheck(s, ref ConditionIds) },
+                {"EventConditions", (s, o) => TagParse.TagStringListCheck(s, ref ConditionIds) },
+                {"EventConditionIds", (s, o) => TagParse.TagStringListCheck(s, ref ConditionIds) },
+                {"Conditions", (s, o) => TagParse.TagStringListCheck(s, ref ConditionIds) },
                 {"UseAnyPassingCondition", (s, o) => TagParse.TagBoolCheck(s, ref UseAnyPassingCondition) },
                 {"OnFailResetCooldown", (s, o) => TagParse.TagBoolCheck(s, ref OnFailResetCooldown) },
                 
                 {"ActionIds", (s, o) => TagParse.TagStringListCheck(s, ref ActionIds) },
+                {"EventActions", (s, o) => TagParse.TagStringListCheck(s, ref ActionIds) },
+                {"EventActionIds", (s, o) => TagParse.TagStringListCheck(s, ref ActionIds) },
                 {"ActionExecution", (s, o) => TagParse.TagActionExecutionCheck(s, ref ActionExecution) },
                 {"TimeUntilNextActionMs", (s, o) => TagParse.TagIntCheck(s, ref TimeUntilNextActionMs) },
                 {"Tags", (s, o) => TagParse.TagStringListCheck(s, ref Tags) },

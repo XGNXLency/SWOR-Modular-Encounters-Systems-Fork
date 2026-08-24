@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Spawners;
+using ModularEncountersSystems.Spawners;
 using ModularEncountersSystems.World;
 using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Entities;
@@ -1064,7 +1064,9 @@ namespace ModularEncountersSystems.Spawning {
 
 				//Determine Initial Coords
 				var randDir = VectorHelper.RandomDirection();
-				var randDist = MathTools.RandomBetween(Settings.BossEncounters.MinCoordsDistanceSpace, Settings.BossEncounters.MaxCoordsDistanceSpace);
+				var minDist = collection.Conditions.BossMinSignalDist > 0 ? collection.Conditions.BossMinSignalDist : Settings.BossEncounters.MinCoordsDistanceSpace;
+				var maxDist = collection.Conditions.BossMaxSignalDist > 0 ? collection.Conditions.BossMaxSignalDist : Settings.BossEncounters.MaxCoordsDistanceSpace;
+				var randDist = MathTools.RandomBetween(minDist, maxDist);
 				var initialCoords = randDir * randDist + environment.Position;
 
 				if (environment.NearestPlanet != null && environment.NearestPlanet.IsPositionInGravity(initialCoords))
@@ -1105,7 +1107,9 @@ namespace ModularEncountersSystems.Spawning {
 
 				var initialUp = environment.NearestPlanet.UpAtPosition(environment.Position);
 				var initialPerp = VectorHelper.RandomPerpendicular(initialUp);
-				var initialDist = MathTools.RandomBetween(Settings.BossEncounters.MinCoordsDistancePlanet, Settings.BossEncounters.MaxCoordsDistancePlanet);
+				var minPlanetDist = collection.Conditions.BossMinSignalDist > 0 ? collection.Conditions.BossMinSignalDist : Settings.BossEncounters.MinCoordsDistancePlanet;
+				var maxPlanetDist = collection.Conditions.BossMaxSignalDist > 0 ? collection.Conditions.BossMaxSignalDist : Settings.BossEncounters.MaxCoordsDistancePlanet;
+				var initialDist = MathTools.RandomBetween(minPlanetDist, maxPlanetDist);
 				var surfaceCoords = environment.NearestPlanet.SurfaceCoordsAtPosition(initialPerp * initialDist + environment.Position);
 				var surfaceUp = environment.NearestPlanet.UpAtPosition(surfaceCoords);
 				var randUpDistance = Settings.BossEncounters.MinPlanetAltitude;

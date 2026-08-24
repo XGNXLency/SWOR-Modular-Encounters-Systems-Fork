@@ -175,6 +175,11 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 		public bool HasTarget;
 		public bool NoTarget;
 
+		public bool IsTargetEnemy;
+		public bool IsTargetNeutral;
+		public bool IsTargetFriendly;
+		public bool IsTargetFaction;
+
 		public bool CheckThreatScore;
 		public int CheckThreatScoreMinimum;
 		public int CheckThreatScoreMaximum;
@@ -430,6 +435,11 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 			HasTarget = false;
 			NoTarget = false;
 
+			IsTargetEnemy = false;
+			IsTargetNeutral = false;
+			IsTargetFriendly = false;
+			IsTargetFaction = false;
+
 			IsAttackerHostile = false;
 			IsAttackerNeutral = false;
 			IsAttackerFriendly = false;
@@ -653,6 +663,12 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 				{"IsTargetStatic", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetStatic) },
 				{"HasTarget", (s, o) => TagParse.TagBoolCheck(s, ref HasTarget) },
 				{"NoTarget", (s, o) => TagParse.TagBoolCheck(s, ref NoTarget) },
+				{"IsTargetEnemy", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetEnemy) },
+				{"IsTargetHostile", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetEnemy) },
+				{"IsTargetNeutral", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetNeutral) },
+				{"IsTargetFriendly", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetFriendly) },
+				{"IsTargetFaction", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetFaction) },
+				{"IsTargetSameFaction", (s, o) => TagParse.TagBoolCheck(s, ref IsTargetFaction) },
 				{"NoActiveContracts", (s, o) => TagParse.TagBoolCheck(s, ref NoActiveContracts) },
 				{"IsAttackerHostile", (s, o) => TagParse.TagBoolCheck(s, ref IsAttackerHostile) }, //
 				{"IsAttackerNeutral", (s, o) => TagParse.TagBoolCheck(s, ref IsAttackerNeutral) },

@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior;
 using ModularEncountersSystems.Configuration.Editor;
 using ModularEncountersSystems.Core;
@@ -499,6 +499,30 @@ namespace ModularEncountersSystems.Sync {
 			if (array[2] == "ChangeCounter") {
 
 				LoggerTools.ChangeCounter(this, array);
+				return true;
+
+			}
+
+			//MES.Debug.GetEvents
+			if (array[2] == "GetEvents") {
+
+				LoggerTools.GetEvents(this);
+				return true;
+
+			}
+
+			//MES.Debug.ResetEventCooldown
+			if (array[2] == "ResetEventCooldown") {
+
+				LoggerTools.ResetEventCooldown(this, array);
+				return true;
+
+			}
+
+			//MES.Debug.TriggerEvent
+			if (array[2] == "TriggerEvent") {
+
+				LoggerTools.TriggerEvent(this, array);
 				return true;
 
 			}

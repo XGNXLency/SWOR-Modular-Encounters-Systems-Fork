@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using ModularEncountersSystems.Behavior;
 using ModularEncountersSystems.Behavior.Subsystems.Trigger;
 using ModularEncountersSystems.Helpers;
@@ -75,8 +75,75 @@ namespace ModularEncountersSystems.Spawning {
             {
                 var waypoint = EncounterWaypoint.CalculateWaypoint(_currentSpawn.ParentBehavior, IdsReplacer.ReplaceId(_currentSpawn.ParentBehavior?.CurrentGrid?.Npc ?? null, _currentSpawn.Waypoint));
                 var spawnCoords = waypoint.GetCoords();
-                //VRage.Utils.MyLog.Default.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>> GPS:spawn_waypoint:" + waypoint.GetCoords().X + ":" + waypoint.GetCoords().Y + ":" + waypoint.GetCoords().Z + "::");
+                //VRage.Utils.MyLog.Default.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>> GPS:spawn_waypoint:" + waypoint.GetCoords().X + ":" + waypoint.GetCoords().Y + ":" + waypoint.GetCoords().Z + "::");
                 _spawnMatrix = MatrixD.CreateWorld(spawnCoords, _currentSpawn.CurrentPositionMatrix.Forward, _currentSpawn.CurrentPositionMatrix.Up);
+            }
+            else if (_currentSpawn.SpawnRelativeToPlayer)
+            {
+                var playerList = new List<IMyPlayer>();
+                MyAPIGateway.Players.GetPlayers(playerList);
+
+                // Find the nearest real player to the NPC (or first active player if no NPC position)
+                IMyPlayer nearestPlayer = null;
+                double nearestDist = double.MaxValue;
+                var npcPos = _currentSpawn.CurrentPositionMatrix.Translation;
+
+                foreach (var p in playerList)
+                {
+                    if (p.IsBot || p.SteamUserId <= 0 || p.GetPosition() == Vector3D.Zero)
+                        continue;
+
+                    double d = npcPos != Vector3D.Zero ? Vector3D.Distance(p.GetPosition(), npcPos) : 0;
+                    if (d < nearestDist)
+                    {
+                        nearestDist = d;
+                        nearestPlayer = p;
+                    }
+                }
+
+                if (nearestPlayer == null)
+                {
+                    SpawnLogger.Write(_currentSpawn.ProfileSubtypeId + ": SpawnRelativeToPlayer - No valid player found, aborting spawn.", SpawnerDebugEnum.Spawning);
+                    _spawnMatrix = MatrixD.Identity;
+                }
+                else
+                {
+                    var playerPos = nearestPlayer.GetPosition();
+                    var upDir = VectorHelper.GetPlanetUpDirection(playerPos);
+
+                    for (int i = 0; i < 15; i++)
+                    {
+                        if (upDir == Vector3D.Zero)
+                        {
+                            var spawnCoords = VectorHelper.RandomDirection() * VectorHelper.RandomDistance(_currentSpawn.MinDistance, _currentSpawn.MaxDistance) + playerPos;
+                            var forwardDir = Vector3D.Normalize(spawnCoords - playerPos);
+                            var upPerpDir = Vector3D.CalculatePerpendicularVector(forwardDir);
+                            _spawnMatrix = MatrixD.CreateWorld(spawnCoords, forwardDir, upPerpDir);
+                        }
+                        else
+                        {
+                            _spawnMatrix = VectorHelper.GetPlanetRandomSpawnMatrix(playerPos, _currentSpawn.MinDistance, _currentSpawn.MaxDistance, _currentSpawn.MinAltitude, _currentSpawn.MaxAltitude, _currentSpawn.InheritNpcAltitude);
+                        }
+
+                        bool tooClose = false;
+                        foreach (var p in playerList)
+                        {
+                            if (p.IsBot || p.SteamUserId <= 0 || p.GetPosition() == Vector3D.Zero)
+                                continue;
+
+                            if (Vector3D.Distance(_spawnMatrix.Translation, p.GetPosition()) < 100)
+                            {
+                                SpawnLogger.Write(_currentSpawn.ProfileSubtypeId + ": Player Too Close To Possible Spawn Coords (Player-Relative). Attempt " + (i + 1).ToString(), SpawnerDebugEnum.Spawning);
+                                _spawnMatrix = MatrixD.Identity;
+                                tooClose = true;
+                                break;
+                            }
+                        }
+
+                        if (!tooClose)
+                            break;
+                    }
+                }
             }
             else
             {

@@ -1556,6 +1556,66 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
 
                 }
 
+                lastCondition = "IsTargetEnemy";
+                if (ConditionReference.IsTargetEnemy)
+                {
+
+                    usedConditions++;
+
+                    if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.Targeting.Target.RelationTypes(_remoteControl.OwnerId).HasFlag(RelationTypeEnum.Enemy))
+                    {
+
+                        satisfiedConditions++;
+
+                    }
+
+                }
+
+                lastCondition = "IsTargetNeutral";
+                if (ConditionReference.IsTargetNeutral)
+                {
+
+                    usedConditions++;
+
+                    if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.Targeting.Target.RelationTypes(_remoteControl.OwnerId).HasFlag(RelationTypeEnum.Neutral))
+                    {
+
+                        satisfiedConditions++;
+
+                    }
+
+                }
+
+                lastCondition = "IsTargetFriendly";
+                if (ConditionReference.IsTargetFriendly)
+                {
+
+                    usedConditions++;
+
+                    if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.Targeting.Target.RelationTypes(_remoteControl.OwnerId).HasFlag(RelationTypeEnum.Friends))
+                    {
+
+                        satisfiedConditions++;
+
+                    }
+
+                }
+
+                lastCondition = "IsTargetFaction";
+                if (ConditionReference.IsTargetFaction)
+                {
+
+                    usedConditions++;
+
+                    if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.Targeting.Target.RelationTypes(_remoteControl.OwnerId).HasFlag(RelationTypeEnum.Faction))
+                    {
+
+                        satisfiedConditions++;
+
+                    }
+
+                }
+
 
                 lastCondition = "IsAttackerHostile";
                 if (ConditionReference.IsAttackerHostile)

@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.World;
+using ModularEncountersSystems.World;
 using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Logging;
 using ModularEncountersSystems.Zones;
@@ -206,7 +206,7 @@ namespace ModularEncountersSystems.Spawning {
 					}
 
 					//AdminSpawn
-					if (!persistentCheckFailed && persistentConditions.AdminSpawnOnly && !adminSpawn) {
+					if (!persistentCheckFailed && persistentConditions.AdminSpawnOnly && !adminSpawn && type != SpawningType.OtherNPC) {
 
 						SpawnLogger.Queue("   - SpawnGroup Is Admin Spawn Only", SpawnerDebugEnum.SpawnGroup, addToReason: true);
 						continue;
@@ -254,7 +254,7 @@ namespace ModularEncountersSystems.Spawning {
 					}
 
 					//AdminSpawn
-					if (conditions.AdminSpawnOnly && !adminSpawn) {
+					if (conditions.AdminSpawnOnly && !adminSpawn && type != SpawningType.OtherNPC) {
 
 						SpawnLogger.Queue("   - SpawnGroup Is Admin Spawn Only", SpawnerDebugEnum.SpawnGroup, addToReason: true);
 						continue;

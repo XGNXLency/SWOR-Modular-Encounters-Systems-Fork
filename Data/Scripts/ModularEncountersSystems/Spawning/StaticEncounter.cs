@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Configuration;
+using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Entities;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
@@ -241,7 +241,8 @@ namespace ModularEncountersSystems.Spawning {
 				if (alreadyHasBoss)
 					continue;
 
-				if (player.Distance(coords) > Settings.BossEncounters.PlayersWithinDistance) {
+				var allowedDistance = Condition.BossMaxSignalDist > 0 ? (Condition.BossMaxSignalDist + 5000) : Settings.BossEncounters.PlayersWithinDistance;
+				if (player.Distance(coords) > Math.Max(allowedDistance, Settings.BossEncounters.PlayersWithinDistance)) {
 
 					SpawnLogger.Write("Player is outside Boss Creation Range", SpawnerDebugEnum.Spawning);
 					continue;

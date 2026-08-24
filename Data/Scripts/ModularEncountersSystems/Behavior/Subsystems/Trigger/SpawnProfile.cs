@@ -1,4 +1,4 @@
-﻿using ProtoBuf;
+using ProtoBuf;
 using ModularEncountersSystems.Helpers;
 using Sandbox.ModAPI;
 using System;
@@ -110,6 +110,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 		[ProtoMember(33)]
 		public Dictionary<string, string> CustomCountersVariablesReferences;
 
+		[ProtoMember(34)]
+		public bool SpawnRelativeToPlayer;
+
 		[ProtoIgnore]
 		public MatrixD CurrentPositionMatrix;
 
@@ -175,6 +178,8 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
             CustomCountersVariables = new Dictionary<string, int>();
             TransferCustomCountersVariables = new List<string>();
             CustomCountersVariablesReferences = new Dictionary<string, string>();
+
+            SpawnRelativeToPlayer = false;
 
 		}
 
@@ -477,6 +482,13 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 					if (tag.Contains("[CustomCountersVariablesReferences:") == true){
 
 						TagParse.TagStringStringDictCheck(tag, ref CustomCountersVariablesReferences);
+
+					}
+
+					//SpawnRelativeToPlayer
+					if (tag.Contains("[SpawnRelativeToPlayer:") == true) {
+
+						TagParse.TagBoolCheck(tag, ref SpawnRelativeToPlayer);
 
 					}
 

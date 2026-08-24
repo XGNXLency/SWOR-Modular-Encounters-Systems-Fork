@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior;
 using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Core;
@@ -2053,6 +2053,66 @@ namespace ModularEncountersSystems.Logging {
 			msg.ClipboardPayload = sb.ToString();
 			msg.Mode = ChatMsgMode.ReturnMessage;
 			msg.ReturnMessage = "Event Data Copied To Clipboard";
+
+		}
+
+		public static void ResetEventCooldown(ChatMessage msg, string[] msgSplit) {
+
+			if (msgSplit.Length < 4) {
+
+				msg.Mode = ChatMsgMode.ReturnMessage;
+				msg.ReturnMessage = "Command Format: /MES.Debug.ResetEventCooldown.<EventName>";
+				return;
+
+			}
+
+			var eventName = msgSplit[3];
+			bool found = false;
+
+			foreach (var ev in EventManager.EventsList) {
+
+				if (ev.ProfileSubtypeId.StartsWith(eventName) || ev.TemplateProfileSubtype == eventName) {
+
+					ev.LastTriggerTime = DateTime.MinValue;
+					ev.CooldownTimeTrigger = 0;
+					found = true;
+
+				}
+
+			}
+
+			msg.Mode = ChatMsgMode.ReturnMessage;
+			msg.ReturnMessage = found ? "Event [" + eventName + "] Cooldown Reset." : "Event [" + eventName + "] Not Found.";
+
+		}
+
+		public static void TriggerEvent(ChatMessage msg, string[] msgSplit) {
+
+			if (msgSplit.Length < 4) {
+
+				msg.Mode = ChatMsgMode.ReturnMessage;
+				msg.ReturnMessage = "Command Format: /MES.Debug.TriggerEvent.<EventName>";
+				return;
+
+			}
+
+			var eventName = msgSplit[3];
+			bool found = false;
+
+			foreach (var ev in EventManager.EventsList) {
+
+				if (ev.ProfileSubtypeId.StartsWith(eventName) || ev.TemplateProfileSubtype == eventName) {
+
+					ev.ActivateEventActions();
+					ev.RunCount++;
+					found = true;
+
+				}
+
+			}
+
+			msg.Mode = ChatMsgMode.ReturnMessage;
+			msg.ReturnMessage = found ? "Event [" + eventName + "] Triggered." : "Event [" + eventName + "] Not Found.";
 
 		}
 

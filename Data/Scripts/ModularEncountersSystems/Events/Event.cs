@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Configuration;
+using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Logging;
 using ModularEncountersSystems.Helpers;
 using Sandbox.Game;
@@ -169,9 +169,10 @@ namespace ModularEncountersSystems.Events
             }
 
 
+            EventEnabled = Profile.UseEvent;
+
             if (FirstTime)
             {
-                EventEnabled = Profile.UseEvent;
                 RunCount = 0;
                 CurrentActionIndex = 0;
                 CooldownTimeTrigger = MathTools.RandomBetween(Profile.MinCooldownMs, Profile.MaxCooldownMs);

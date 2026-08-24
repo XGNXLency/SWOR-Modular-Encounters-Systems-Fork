@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior.Subsystems.Trigger;
 using ModularEncountersSystems.Entities;
 using ModularEncountersSystems.Events.Condition;
@@ -439,53 +439,52 @@ namespace ModularEncountersSystems.Events.Action
                 lastAction = "SpawnEncounter";
                 if (actions.SpawnEncounter)
                 {
-                    if (Spawner.Count == actions.SpawnFactionTags.Count && Spawner.Count == actions.SpawnVector3Ds.Count)
+                    for (int i = 0; i < Spawner.Count; i++)
                     {
-                        for (int i = 0; i < Spawner.Count; i++)
+                        var spawner = Spawner[i];
+
+                        if (spawner.UseSpawn)
                         {
-                            var spawner = Spawner[i];
-
-                            if (spawner.UseSpawn)
+                            BehaviorLogger.Write(actions.ProfileSubtypeId + ": Attempting Spawn", BehaviorDebugEnum.Spawn);
+                            if (spawner.IsReadyToSpawn())
                             {
-                                BehaviorLogger.Write(actions.ProfileSubtypeId + ": Attempting Spawn", BehaviorDebugEnum.Spawn);
-                                if (spawner.IsReadyToSpawn())
+                                var coords = actions.SpawnVector3Ds.Count > i ? actions.SpawnVector3Ds[i] : (actions.SpawnVector3Ds.Count > 0 ? actions.SpawnVector3Ds[0] : Vector3D.Zero);
+                                var factionTag = actions.SpawnFactionTags.Count > i ? actions.SpawnFactionTags[i] : (actions.SpawnFactionTags.Count > 0 ? actions.SpawnFactionTags[0] : "");
+                                var planet = PlanetManager.GetNearestPlanet(coords);
+
+                                MatrixD WorldMatrix = MatrixD.Zero;
+
+                                if (coords != Vector3D.Zero && planet != null && PlanetManager.InGravity(coords))
                                 {
-                                    var coords = actions.SpawnVector3Ds[i];
-                                    var planet = PlanetManager.GetNearestPlanet(coords);
-
-                                    MatrixD WorldMatrix = MatrixD.Zero;
-
-                                    if (planet != null && PlanetManager.InGravity(coords))
-                                    {
-                                        var up = planet.UpAtPosition(coords);
-                                        var forward = Vector3D.CalculatePerpendicularVector(up);
-                                        WorldMatrix = MatrixD.CreateWorld(coords, forward, up);
-                                    }
-                                    else
-                                        WorldMatrix = MatrixD.CreateWorld(coords);
-
-                                    spawner.AssignInitialMatrix(WorldMatrix);
-                                    spawner.CurrentFactionTag = actions.SpawnFactionTags[i];
-
-
-                                    List<string> new_tags = new List<string>();
-
-                                    foreach (var tag in spawner.SpawnGroups)
-                                    {
-                                        var tagnew = tag;
-                                        if (tagnew.Contains("{Faction}"))
-                                        {
-                                            tagnew = tag.Replace("{Faction}", actions.SpawnFactionTags[i]);
-                                        }
-
-                                        tagnew = IdsReplacer.ReplaceText(tagnew, actions.SpawnReplaceKeys, actions.SpawnReplaceValues);
-
-                                        new_tags.Add(tagnew);
-                                    }
-
-                                    spawner.SpawnGroups = new_tags;
-                                    BehaviorSpawnHelper.BehaviorSpawnRequest(spawner, -1, instanceId);
+                                    var up = planet.UpAtPosition(coords);
+                                    var forward = Vector3D.CalculatePerpendicularVector(up);
+                                    WorldMatrix = MatrixD.CreateWorld(coords, forward, up);
                                 }
+                                else
+                                    WorldMatrix = MatrixD.CreateWorld(coords);
+
+                                spawner.AssignInitialMatrix(WorldMatrix);
+                                if (!string.IsNullOrWhiteSpace(factionTag))
+                                    spawner.CurrentFactionTag = factionTag;
+
+
+                                List<string> new_tags = new List<string>();
+
+                                foreach (var tag in spawner.SpawnGroups)
+                                {
+                                    var tagnew = tag;
+                                    if (!string.IsNullOrWhiteSpace(factionTag) && tagnew.Contains("{Faction}"))
+                                    {
+                                        tagnew = tag.Replace("{Faction}", factionTag);
+                                    }
+
+                                    tagnew = IdsReplacer.ReplaceText(tagnew, actions.SpawnReplaceKeys, actions.SpawnReplaceValues);
+
+                                    new_tags.Add(tagnew);
+                                }
+
+                                spawner.SpawnGroups = new_tags;
+                                BehaviorSpawnHelper.BehaviorSpawnRequest(spawner, -1, instanceId);
                             }
                         }
                     }

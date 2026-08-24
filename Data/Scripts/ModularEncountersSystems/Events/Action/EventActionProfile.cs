@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using ProtoBuf;
 using System.Collections.Generic;
 using ModularEncountersSystems.Spawning;
@@ -130,7 +130,7 @@ namespace ModularEncountersSystems.Events.Action {
 
 
                 //Spawner
-                if (tag.Contains("[SpawnData:") == true)
+                if (tag.Contains("[SpawnData:") == true || tag.Contains("[Spawner:") == true)
                 {
 
                     string tempValue = "";

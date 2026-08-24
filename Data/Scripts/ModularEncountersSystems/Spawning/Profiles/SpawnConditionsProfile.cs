@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Helpers;
+using ModularEncountersSystems.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -324,6 +324,9 @@ namespace ModularEncountersSystems.Spawning.Profiles {
 		public string BossCustomGPSLabel;
 		public Vector3D BossCustomGPSColor;
 		public string BossMusicId; //Implement //Doc
+
+		public double BossMinSignalDist; // Overrides MinCoordsDistance(Space/Planet) when > 0
+		public double BossMaxSignalDist; // Overrides MaxCoordsDistance(Space/Planet) when > 0
 
 		public bool PlaySoundAtSpawnTriggerPosition;
 		public string SpawnTriggerPositionSoundId;
@@ -668,6 +671,9 @@ namespace ModularEncountersSystems.Spawning.Profiles {
 			BossCustomGPSColor = new Vector3D(255, 0, 255);
 			BossMusicId = "";
 
+			BossMinSignalDist = -1;
+			BossMaxSignalDist = -1;
+
 			PlaySoundAtSpawnTriggerPosition = false;
 			SpawnTriggerPositionSoundId = "";
 
@@ -942,6 +948,8 @@ namespace ModularEncountersSystems.Spawning.Profiles {
 				{"BossCustomGPSLabel", (s, o) => TagParse.TagStringCheck(s, ref BossCustomGPSLabel) },
 				{"BossCustomGPSColor", (s, o) => TagParse.TagVector3DCheck(s, ref BossCustomGPSColor) },
 				{"BossMusicId", (s, o) => TagParse.TagStringCheck(s, ref BossMusicId) },
+				{"BossMinSignalDist", (s, o) => TagParse.TagDoubleCheck(s, ref BossMinSignalDist) },
+				{"BossMaxSignalDist", (s, o) => TagParse.TagDoubleCheck(s, ref BossMaxSignalDist) },
 				{"PlaySoundAtSpawnTriggerPosition", (s, o) => TagParse.TagBoolCheck(s, ref PlaySoundAtSpawnTriggerPosition) },
 				{"SpawnTriggerPositionSoundId", (s, o) => TagParse.TagStringCheck(s, ref SpawnTriggerPositionSoundId) },
 				{"RotateFirstCockpitToForward", (s, o) => TagParse.TagBoolCheck(s, ref RotateFirstCockpitToForward) },

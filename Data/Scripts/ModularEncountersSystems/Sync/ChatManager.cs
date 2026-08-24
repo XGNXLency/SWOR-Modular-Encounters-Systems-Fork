@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Core;
+using ModularEncountersSystems.Core;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
 using Sandbox.Game;
