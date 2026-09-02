@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Helpers;
+using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
@@ -23,6 +23,21 @@ namespace ModularEncountersSystems.Entities {
 			MyAPIGateway.GridGroups.OnGridGroupCreated += OnGridGroupChanged;
 			MyAPIGateway.GridGroups.OnGridGroupDestroyed += OnGridGroupChanged;
 		
+		}
+
+		public static void RefreshGridOwnerships() {
+
+			lock (Grids) {
+
+				for (int i = Grids.Count - 1; i >= 0; i--) {
+
+					if (Grids[i] != null)
+						Grids[i].RecheckOwnershipMajority = true;
+
+				}
+
+			}
+
 		}
 
 		public static void GetBlocksFromGrid<T>(IMyCubeGrid grid, List<IMySlimBlock> blocks, bool getAttachedGrids = false) where T : class {

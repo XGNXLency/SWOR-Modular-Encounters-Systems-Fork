@@ -1992,7 +1992,7 @@ namespace ModularEncountersSystems.Logging {
 			
 			}
 
-			var threatLevel = SpawnConditions.GetThreatLevel(5000, false, msg.PlayerPosition);
+			var threatLevel = SpawnConditions.GetThreatLevel(defaultDist, false, msg.PlayerPosition);
 			MyVisualScriptLogicProvider.ShowNotification("Threat Score At Position With " + defaultDist + " Meters: " + threatLevel, 5000, "White", msg.PlayerId);
 
 		}

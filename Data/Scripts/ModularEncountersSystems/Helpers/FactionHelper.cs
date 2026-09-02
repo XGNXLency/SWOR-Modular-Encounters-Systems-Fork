@@ -1,4 +1,5 @@
-﻿using ModularEncountersSystems.Behavior.Subsystems.Trigger;
+using ModularEncountersSystems.Behavior.Subsystems.Trigger;
+using ModularEncountersSystems.Entities;
 using ModularEncountersSystems.Logging;
 using ModularEncountersSystems.Sync;
 using Sandbox.Definitions;
@@ -36,11 +37,17 @@ namespace ModularEncountersSystems.Helpers {
 
 		public static bool IsIdentityPlayer(long id) {
 
-            if (MyAPIGateway.Players.TryGetIdentityId(id) != null)
-            {
-                return !MyAPIGateway.Players.TryGetIdentityId(id).IsBot && MyAPIGateway.Players.TryGetSteamId(id) > 0;
-            }
-            return false;
+			if (id == 0)
+				return false;
+
+			var playerEntity = PlayerManager.GetPlayerWithIdentityId(id);
+			if (playerEntity != null && playerEntity.Online && playerEntity.Player != null && !playerEntity.Player.IsBot) {
+
+				return true;
+
+			}
+
+			return false;
 
 		}
 
