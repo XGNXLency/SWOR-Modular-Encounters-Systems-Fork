@@ -659,24 +659,6 @@ namespace ModularEncountersSystems.Behavior {
 
 			}
 
-			if (this.ConfigCheck == false) {
-
-				this.ConfigCheck = true;
-				var valA = AddonManager.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA==")));
-				var valB = AddonManager.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MjU0MjU5OTEwMA==")));
-				var valC = AddonManager.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("NzUwODU1")));
-
-				if (AddonManager.ConfigInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) && (!valA && !valB && !valC)) {
-
-					this.BehaviorTerminated = true;
-					if (CurrentGrid?.Npc != null)
-						CurrentGrid.Npc.BehaviorTerminationReason = "Setup/Config Error";
-					return;
-
-				}
-
-			}
-
 			BehaviorLogger.Write("Verifying if Remote Control is Functional and Has Physics", BehaviorDebugEnum.BehaviorSetup);
 			this.RemoteControl = remoteControl;
 			this.CubeGrid = remoteControl.SlimBlock.CubeGrid;

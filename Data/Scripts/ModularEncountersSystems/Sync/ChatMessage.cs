@@ -105,6 +105,16 @@ namespace ModularEncountersSystems.Sync {
 
 			SpawnLogger.Write("Chat Command Received: " + Message, SpawnerDebugEnum.Settings);
 
+			//MyThreat
+			if (Message.StartsWith("/MES.MyThreat", StringComparison.OrdinalIgnoreCase)) {
+				var split = Message.Split('.');
+				string dist = "5000";
+				if (split.Length >= 3 && !string.IsNullOrWhiteSpace(split[2]))
+					dist = split[2];
+				LoggerTools.GetThreatScore(this, new string[] { "", "Info", "GetThreatScore", dist });
+				return true;
+			}
+
 			//Spawn
 			if (Message.StartsWith("/MES.Spawn."))
 				return ProcessSpawn();

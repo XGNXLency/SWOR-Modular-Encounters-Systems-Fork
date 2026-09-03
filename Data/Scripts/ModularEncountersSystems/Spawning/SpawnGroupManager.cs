@@ -206,7 +206,7 @@ namespace ModularEncountersSystems.Spawning {
 					}
 
 					//AdminSpawn
-					if (!persistentCheckFailed && persistentConditions.AdminSpawnOnly && !adminSpawn && type != SpawningType.OtherNPC) {
+					if (!persistentCheckFailed && persistentConditions.AdminSpawnOnly && !adminSpawn) {
 
 						SpawnLogger.Queue("   - SpawnGroup Is Admin Spawn Only", SpawnerDebugEnum.SpawnGroup, addToReason: true);
 						continue;
@@ -254,7 +254,7 @@ namespace ModularEncountersSystems.Spawning {
 					}
 
 					//AdminSpawn
-					if (conditions.AdminSpawnOnly && !adminSpawn && type != SpawningType.OtherNPC) {
+					if (conditions.AdminSpawnOnly && !adminSpawn) {
 
 						SpawnLogger.Queue("   - SpawnGroup Is Admin Spawn Only", SpawnerDebugEnum.SpawnGroup, addToReason: true);
 						continue;
@@ -641,13 +641,6 @@ namespace ModularEncountersSystems.Spawning {
 			foreach (var spawnGroup in SpawnGroups) {
 
 				TotalSpawnGroups.ProcessSpawnGroup(spawnGroup);
-
-			}
-
-			if (SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && (!SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) && !SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("NzUwODU1"))) && !SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MjU0MjU5OTEwMA=="))))) {
-
-				SpawnGroups.Clear();
-				return;
 
 			}
 

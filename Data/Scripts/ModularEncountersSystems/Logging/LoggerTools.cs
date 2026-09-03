@@ -1307,6 +1307,47 @@ namespace ModularEncountersSystems.Logging {
 		
 		}
 
+		private static void AppendSpawnEligibilityBreakdown(StringBuilder sb, string categoryName, SpawningType type, EnvironmentEvaluation environment, SpawnGroupCollection collection) {
+
+			SpawnLogger.Reason = new Dictionary<string, int>();
+			SpawnGroupManager.GetSpawnGroups(type, "Debug", environment, "", collection);
+
+			if (collection.SpawnGroups.Count > 0) {
+
+				sb.Append("::: ").Append(categoryName).Append(" Eligible Spawns (").Append(collection.SpawnGroups.Distinct().Count()).Append(") :::").AppendLine();
+
+				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
+
+					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
+
+				}
+
+				sb.AppendLine();
+
+			} else {
+
+				sb.Append("::: ").Append(categoryName).Append(" Eligible Spawns (0) :::").AppendLine();
+				if (SpawnLogger.Reason != null && SpawnLogger.Reason.Count > 0) {
+
+					sb.Append(" > Rejection Reasons:").AppendLine();
+					foreach (var reason in SpawnLogger.Reason.OrderByDescending(x => x.Value)) {
+
+						sb.Append("   - ").Append(reason.Key).Append(": ").Append(reason.Value).AppendLine();
+
+					}
+
+				} else {
+
+					sb.Append(" > No groups evaluated (environment or conditions ineligible)").AppendLine();
+
+				}
+
+				sb.AppendLine();
+
+			}
+
+		}
+
 		public static string GetEligibleSpawnsAtPosition(ChatMessage msg) {
 
 			//StringBuilder
@@ -1322,6 +1363,7 @@ namespace ModularEncountersSystems.Logging {
 			sb.Append(" - Threat Score: ").Append(threatLevel.ToString()).AppendLine();
 			sb.Append(" - PCU Score:    ").Append(pcuLevel.ToString()).AppendLine();
 			sb.Append(" - Combat Phase: ").Append(!Settings.Combat.EnableCombatPhaseSystem ? "Disabled In Settings" : (CombatPhaseManager.Active ? "Active" : "Inactive")).AppendLine();
+			sb.Append(" - Total SpawnGroups Loaded: ").Append(SpawnGroupManager.SpawnGroups.Count).AppendLine();
 
 			sb.AppendLine();
 
@@ -1333,7 +1375,7 @@ namespace ModularEncountersSystems.Logging {
 			sb.Append(" - Planet Name:                     ").Append(environment.IsOnPlanet ? environment.NearestPlanetName : "N/A").AppendLine();
 			sb.Append(" - Planet Entity Id:                ").Append(environment.IsOnPlanet ? environment.NearestPlanet.Planet.EntityId.ToString() : "N/A").AppendLine();
 			sb.Append(" - Planet Center Coordinates:       ").Append(environment.IsOnPlanet ? environment.NearestPlanet.Center().ToString() : "N/A").AppendLine();
-			sb.Append(" - Planet Surface Coordinates:      ").Append(environment.IsOnPlanet ? environment.SurfaceCoords.ToString() : "N/A").AppendLine();
+			sb.Append(" - Planet Surface Coordinates:      ").Append(environment.SurfaceCoords.ToString()).AppendLine();
 			sb.Append(" - Planet Diameter:                 ").Append(environment.IsOnPlanet ? environment.PlanetDiameter.ToString() : "N/A").AppendLine();
 			sb.Append(" - Oxygen At Position:              ").Append(environment.IsOnPlanet ? environment.OxygenAtPosition.ToString() : "N/A").AppendLine();
 			sb.Append(" - Atmosphere At Position:          ").Append(environment.IsOnPlanet ? environment.AtmosphereAtPosition.ToString() : "N/A").AppendLine();
@@ -1347,7 +1389,7 @@ namespace ModularEncountersSystems.Logging {
 			sb.Append(" - Water Mod Enabled:               ").Append(AddonManager.WaterMod).AppendLine();
 			sb.Append(" - Planet Has Water:                ").Append(environment.IsOnPlanet ? environment.PlanetHasWater.ToString() : "N/A").AppendLine();
 			sb.Append(" - Position Underwater:             ").Append(environment.IsOnPlanet ? environment.PositionIsUnderWater.ToString() : "N/A").AppendLine();
-			sb.Append(" - Surface Underwater:              ").Append(environment.IsOnPlanet ? environment.SurfaceIsUnderWater.ToString() : "N/A").AppendLine();
+			sb.Append(" - Surface Underwater:              ").Append(environment.SurfaceIsUnderWater.ToString()).AppendLine();
 			sb.Append(" - Water Coverage Ratio:            ").Append(environment.IsOnPlanet ? (Math.Round(environment.WaterInSurroundingAreaRatio, 3)).ToString() : "N/A").AppendLine().AppendLine();
 
 			sb.Append(" - Nebula Mod Enabled:              ").Append(AddonManager.NebulaMod).AppendLine();
@@ -1370,143 +1412,40 @@ namespace ModularEncountersSystems.Logging {
 
 			//Space Cargo
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.SpaceCargoShip, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Space / Lunar Cargo Ship Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Space / Lunar Cargo Ship", SpawningType.SpaceCargoShip, environment, collection);
 
 			//Random Encounter
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.RandomEncounter, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Random Encounter Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Random Encounter", SpawningType.RandomEncounter, environment, collection);
 
 			//Planetary Cargo
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.PlanetaryCargoShip, "Debug", environment, "", collection);
+			if (APIs.DragApiLoaded && APIs.Drag.AdvLift && !Settings.Grids.AerodynamicsModAdvLiftOverride) {
 
-			if (environment.PlanetaryCargoShipsEligible || environment.GravityCargoShipsEligible) {
-
-				sb.Append("::: Planetary / Gravity Cargo Ship Eligible Spawns :::").AppendLine();
-
-				if (APIs.DragApiLoaded && APIs.Drag.AdvLift && !Settings.Grids.AerodynamicsModAdvLiftOverride) {
-
-					sb.Append(" > Aerodynamics Mod AdvLift Detected. Most Planetary Cargo Ships Will Not Be Compatible.").AppendLine();
-					sb.Append(" > To Restore Cargo Ships, Use One Of The Following Options:").AppendLine();
-					sb.Append("   > Disable AdvLift in Aerodynamics Mod Config.").AppendLine();
-					sb.Append("   > Remove Aerodynamics Mod.").AppendLine();
-					sb.Append("   > Enable [AerodynamicsModAdvLiftOverride] in MES Config File Config-Grids.xml (Not Recommended / Ships May Not Behave Properly)").AppendLine();
-
-				}
-
-				if (collection.SpawnGroups.Count > 0) {
-
-					foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-						sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-					}
-
-				}
-
-				sb.AppendLine();
+				sb.Append(" > Aerodynamics Mod AdvLift Detected. Most Planetary Cargo Ships Will Not Be Compatible.").AppendLine();
+				sb.Append(" > To Restore Cargo Ships, Use One Of The Following Options:").AppendLine();
+				sb.Append("   > Disable AdvLift in Aerodynamics Mod Config.").AppendLine();
+				sb.Append("   > Remove Aerodynamics Mod.").AppendLine();
+				sb.Append("   > Enable [AerodynamicsModAdvLiftOverride] in MES Config File Config-Grids.xml (Not Recommended / Ships May Not Behave Properly)").AppendLine();
 
 			}
+			AppendSpawnEligibilityBreakdown(sb, "Planetary / Gravity Cargo Ship", SpawningType.PlanetaryCargoShip, environment, collection);
 
 			//Planetary Installation
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.PlanetaryInstallation, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Planetary Installation Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Planetary Installation", SpawningType.PlanetaryInstallation, environment, collection);
 
 			//Boss
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.BossEncounter, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Boss Encounter Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Boss Encounter", SpawningType.BossEncounter, environment, collection);
 
 			//Creature
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.Creature, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Creature / Bot Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Creature / Bot", SpawningType.Creature, environment, collection);
 
 			//Drone Encounters
 			collection = new SpawnGroupCollection();
-			SpawnGroupManager.GetSpawnGroups(SpawningType.DroneEncounter, "Debug", environment, "", collection);
-
-			if (collection.SpawnGroups.Count > 0) {
-
-				sb.Append("::: Drone Encounter Eligible Spawns :::").AppendLine();
-
-				foreach (var sgroup in collection.SpawnGroups.Distinct()) {
-
-					sb.Append(" - ").Append(sgroup.SpawnGroupName).AppendLine();
-
-				}
-
-				sb.AppendLine();
-
-			}
+			AppendSpawnEligibilityBreakdown(sb, "Drone Encounter", SpawningType.DroneEncounter, environment, collection);
 
 			//StaticEncounters
 			if (NpcManager.StaticEncounters != null) {
