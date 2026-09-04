@@ -1,3 +1,4 @@
+using System;
 using ModularEncountersSystems.Core;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;

@@ -1,3 +1,4 @@
+using System;
 using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior;
 using ModularEncountersSystems.Configuration.Editor;
