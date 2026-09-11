@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Behavior.Subsystems.AutoPilot;
+using ModularEncountersSystems.Behavior.Subsystems.AutoPilot;
 using ModularEncountersSystems.Entities;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
@@ -221,12 +221,18 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Weapons {
 
 				if (collision.HasTarget(maxTargetTrajectory + 50)) {
 
-					//if ((collision.Type == CollisionType.Voxel && !collision.CollisionIsWater) || collision.Type == CollisionType.Safezone) {
-					if ((collision.Type == CollisionType.Voxel && !collision.CollisionIsWater && collision.HasTarget(maxTargetTrajectory - 5)) || collision.Type == CollisionType.Safezone)
+					if (collision.Type == CollisionType.Safezone && collision.HasTarget(maxTargetTrajectory - 5))
 					{
-						//BehaviorLogger.Write(" - Voxel Collision or SafeZone", BehaviorDebugEnum.Weapon);
 						hasCollision = true;
+					}
 
+					if (collision.Type == CollisionType.Voxel && !collision.CollisionIsWater)
+					{
+						var voxelThreshold = _behavior.AutoPilot.InGravity() ? Math.Min(maxTargetTrajectory * 0.75, maxTargetTrajectory - 150) : (maxTargetTrajectory - 5);
+						if (voxelThreshold > 0 && collision.HasTarget(voxelThreshold))
+						{
+							hasCollision = true;
+						}
 					}
 
 					if (collision.Type == CollisionType.Grid || collision.Type == CollisionType.Shield) {
@@ -294,7 +300,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Weapons {
 			var reqTrajectory = dist > trajectory ? trajectory : trajectory - (trajectory - dist);
 			var distFromMaxTrajectory = Vector3D.Distance(coords, _block.WorldMatrix.Forward * reqTrajectory + _block.GetPosition());
 
-			if (allowedAngle && distFromMaxTrajectory < _weaponSystem.Data.WeaponMaxBaseDistanceTarget && dist < trajectory) {
+			bool allowedDist = _weaponSystem.Data.WeaponMaxBaseDistanceTarget <= 0 || distFromMaxTrajectory < _weaponSystem.Data.WeaponMaxBaseDistanceTarget || (_weaponSystem.Data.WeaponMaxAngleFromTarget > 6 && allowedAngle);
+
+			if (allowedAngle && allowedDist && dist < trajectory) {
 
 				return true;
 

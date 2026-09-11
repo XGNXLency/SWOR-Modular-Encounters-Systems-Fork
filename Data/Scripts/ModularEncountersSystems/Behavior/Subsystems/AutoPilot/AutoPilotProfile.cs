@@ -1,4 +1,4 @@
-﻿using ProtoBuf;
+using ProtoBuf;
 using ModularEncountersSystems.Helpers;
 using System;
 using System.Collections.Generic;
@@ -45,6 +45,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 		public int WaypointWaitTimeTrigger;
 		public int WaypointAbandonTimeTrigger;
 		public double OffsetMaxAngleFromTarget;
+		public double WaypointMaxAngleFromForward;
 
         //Circle Target Config
         public bool CircleTargetClockwise;
@@ -268,6 +269,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			WaypointAbandonTimeTrigger = 30;
 
 			OffsetMaxAngleFromTarget = 180;
+			WaypointMaxAngleFromForward = 180;
 
             TargetApproachTimer = 30;
 			TargetEngageTimer = 10;
@@ -936,6 +938,14 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
             {
 
                 TagParse.TagDoubleCheck(tag, ref this.OffsetMaxAngleFromTarget);
+
+            }
+
+            //WaypointMaxAngleFromForward
+            if (tag.Contains("[WaypointMaxAngleFromForward:") == true || tag.Contains("[WaypointGeneratorMaxAngleFromForward:") == true)
+            {
+
+                TagParse.TagDoubleCheck(tag, ref this.WaypointMaxAngleFromForward);
 
             }
 

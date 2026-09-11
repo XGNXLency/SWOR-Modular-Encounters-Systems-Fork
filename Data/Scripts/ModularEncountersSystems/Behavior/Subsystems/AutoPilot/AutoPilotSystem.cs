@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior.Subsystems.Trigger;
 using ModularEncountersSystems.Behavior.Subsystems.Weapons;
 using ModularEncountersSystems.Core;
@@ -1482,7 +1482,20 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
                     }
                     else
                     {
-                        _offsetDirection = Vector3D.Normalize(MyUtils.GetRandomPerpendicularVector((Vector3)_upDirection));
+						if (Data.WaypointMaxAngleFromForward < 180)
+						{
+							var shipForward = _remoteControl != null ? _remoteControl.WorldMatrix.Forward : Vector3D.Forward;
+							var shipVel = MyVelocity.LengthSquared() > 1 ? Vector3D.Normalize(MyVelocity) : shipForward;
+							var forwardFlat = shipVel - Vector3D.Dot(shipVel, _upDirection) * _upDirection;
+							var horizontalForward = forwardFlat.LengthSquared() > 0.001 ? Vector3D.Normalize(forwardFlat) : Vector3D.Normalize(MyUtils.GetRandomPerpendicularVector((Vector3)_upDirection));
+							var randomInCone = VectorHelper.RandomDirectionInCone(horizontalForward, Data.WaypointMaxAngleFromForward);
+							var flatDir = randomInCone - Vector3D.Dot(randomInCone, _upDirection) * _upDirection;
+							_offsetDirection = flatDir.LengthSquared() > 0.001 ? Vector3D.Normalize(flatDir) : horizontalForward;
+						}
+						else
+						{
+							_offsetDirection = Vector3D.Normalize(MyUtils.GetRandomPerpendicularVector((Vector3)_upDirection));
+						}
                     }
 
 
@@ -1513,11 +1526,20 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 				} else {
 
-					var directionRand = VectorHelper.RandomDirection();
-					var directionRandInv = directionRand * -1;
-					var dirDist = Vector3D.Distance(_pendingWaypoint + directionRand, _myPosition);
-					var dirDistInv = Vector3D.Distance(_pendingWaypoint + directionRandInv, _myPosition);
-					_offsetDirection = dirDist < dirDistInv ? directionRand : directionRandInv;
+					if (Data.WaypointMaxAngleFromForward < 180)
+					{
+						var shipForward = _remoteControl != null ? _remoteControl.WorldMatrix.Forward : Vector3D.Forward;
+						var shipDir = MyVelocity.LengthSquared() > 1 ? Vector3D.Normalize(MyVelocity) : shipForward;
+						_offsetDirection = VectorHelper.RandomDirectionInCone(shipDir, Data.WaypointMaxAngleFromForward);
+					}
+					else
+					{
+						var directionRand = VectorHelper.RandomDirection();
+						var directionRandInv = directionRand * -1;
+						var dirDist = Vector3D.Distance(_pendingWaypoint + directionRand, _myPosition);
+						var dirDistInv = Vector3D.Distance(_pendingWaypoint + directionRandInv, _myPosition);
+						_offsetDirection = dirDist < dirDistInv ? directionRand : directionRandInv;
+					}
 					_offsetAltitude = 0;
 					_offsetDistance = MathTools.RandomBetween(Data.OffsetSpaceMinDistFromTarget, Data.OffsetSpaceMaxDistFromTarget);
 
@@ -2249,65 +2271,109 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 				BehaviorLogger.Write("Manually Created Despawn Coords in Gravity", BehaviorDebugEnum.BehaviorSpecific);
 				var center = CurrentPlanet.Center();
 				var up = Vector3D.Normalize(coords - center);
-				var forward = MyUtils.GetRandomPerpendicularVector(ref up);
 				var surfaceCoordsPos = CurrentPlanet.SurfaceCoordsAtPosition(coords);
-				var surfaceMatrix = MatrixD.CreateWorld(surfaceCoordsPos, forward, up);
-				var surfaceDistanceCore = Vector3D.DistanceSquared(surfaceCoordsPos, center);
 				Vector3D direction = Vector3D.Zero;
-				double distDifference = -1;
 
-				var forwardDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Forward, distance, center));
+				if (Data.WaypointMaxAngleFromForward < 180) {
 
-				if (distDifference == -1) {
+					var shipForward = _remoteControl != null ? _remoteControl.WorldMatrix.Forward : Vector3D.Forward;
+					var shipVelocity = MyVelocity.LengthSquared() > 1 ? Vector3D.Normalize(MyVelocity) : shipForward;
+					var forwardFlat = shipVelocity - Vector3D.Dot(shipVelocity, up) * up;
+					Vector3D horizontalForward;
+					if (forwardFlat.LengthSquared() > 0.001) {
+						horizontalForward = Vector3D.Normalize(forwardFlat);
+					} else {
+						var fallbackFlat = shipForward - Vector3D.Dot(shipForward, up) * up;
+						if (fallbackFlat.LengthSquared() > 0.001) {
+							horizontalForward = Vector3D.Normalize(fallbackFlat);
+						} else {
+							horizontalForward = MyUtils.GetRandomPerpendicularVector(ref up);
+						}
+					}
 
-					distDifference = forwardDespawnCoreDistDifference;
-					direction = surfaceMatrix.Forward;
+					var coneAngle = MathHelper.Clamp(Data.WaypointMaxAngleFromForward, 0, 180);
+					var randomInCone = VectorHelper.RandomDirectionInCone(horizontalForward, coneAngle);
+					var flatDir = randomInCone - Vector3D.Dot(randomInCone, up) * up;
+					direction = flatDir.LengthSquared() > 0.001 ? Vector3D.Normalize(flatDir) : horizontalForward;
 
-				}
+				} else {
 
-				var backDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Backward, distance, center));
+					var forward = MyUtils.GetRandomPerpendicularVector(ref up);
+					var surfaceMatrix = MatrixD.CreateWorld(surfaceCoordsPos, forward, up);
+					var surfaceDistanceCore = Vector3D.DistanceSquared(surfaceCoordsPos, center);
+					double distDifference = -1;
 
-				if (backDespawnCoreDistDifference < distDifference) {
+					var forwardDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Forward, distance, center));
 
-					distDifference = forwardDespawnCoreDistDifference;
-					direction = surfaceMatrix.Backward;
+					if (distDifference == -1) {
 
-				}
+						distDifference = forwardDespawnCoreDistDifference;
+						direction = surfaceMatrix.Forward;
 
-				var leftDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Left, distance, center));
+					}
 
-				if (leftDespawnCoreDistDifference < distDifference) {
+					var backDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Backward, distance, center));
 
-					distDifference = forwardDespawnCoreDistDifference;
-					direction = surfaceMatrix.Left;
+					if (backDespawnCoreDistDifference < distDifference) {
 
-				}
+						distDifference = backDespawnCoreDistDifference;
+						direction = surfaceMatrix.Backward;
 
-				var rightDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Right, distance, center));
+					}
 
-				if (rightDespawnCoreDistDifference < distDifference) {
+					var leftDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Left, distance, center));
 
-					distDifference = forwardDespawnCoreDistDifference;
-					direction = surfaceMatrix.Right;
+					if (leftDespawnCoreDistDifference < distDifference) {
+
+						distDifference = leftDespawnCoreDistDifference;
+						direction = surfaceMatrix.Left;
+
+					}
+
+					var rightDespawnCoreDistDifference = Math.Abs(surfaceDistanceCore - GetCoreDistanceFromPotentialDespawn(surfaceMatrix, surfaceMatrix.Right, distance, center));
+
+					if (rightDespawnCoreDistDifference < distDifference) {
+
+						distDifference = rightDespawnCoreDistDifference;
+						direction = surfaceMatrix.Right;
+
+					}
 
 				}
 
 				var finalRoughCoords = direction * distance + surfaceCoordsPos;
 				var finalSurfaceCoords = CurrentPlanet.SurfaceCoordsAtPosition(finalRoughCoords);
 				var finalUp = Vector3D.Normalize(finalSurfaceCoords - center);
-				return finalUp * MathTools.RandomBetween(Data.DespawnCoordsMinAltitude, Data.DespawnCoordsMaxAltitude) + finalSurfaceCoords;
+				var altitude = MathTools.RandomBetween(Data.DespawnCoordsMinAltitude, Data.DespawnCoordsMaxAltitude);
+				if (Data.IdealPlanetAltitude > altitude) {
+					altitude = Data.IdealPlanetAltitude;
+				}
+				return finalUp * altitude + finalSurfaceCoords;
 
 			} else {
 
 				BehaviorLogger.Write("Manually Created Despawn Coords in Space", BehaviorDebugEnum.BehaviorSpecific);
-				var randomDir = Vector3D.Normalize(MyUtils.GetRandomVector3D());
+				Vector3D randomDir;
+
+				if (Data.WaypointMaxAngleFromForward < 180) {
+
+					var shipForward = _remoteControl != null ? _remoteControl.WorldMatrix.Forward : Vector3D.Forward;
+					var shipDir = MyVelocity.LengthSquared() > 1 ? Vector3D.Normalize(MyVelocity) : shipForward;
+					randomDir = VectorHelper.RandomDirectionInCone(shipDir, Data.WaypointMaxAngleFromForward);
+
+				} else {
+
+					randomDir = Vector3D.Normalize(MyUtils.GetRandomVector3D());
+
+				}
+
 				Vector3D result = randomDir * distance + coords;
 
 				if (SpaceDespawnInsideGravity(result)) {
 
 					result = -randomDir * distance + coords;
 
-					if(SpaceDespawnInsideGravity(result)){
+					if (SpaceDespawnInsideGravity(result)) {
 
 						result = Vector3D.CalculatePerpendicularVector(randomDir) + coords;
 

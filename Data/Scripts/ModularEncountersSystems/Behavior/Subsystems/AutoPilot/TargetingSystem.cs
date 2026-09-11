@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior.Subsystems.AutoPilot;
 using ModularEncountersSystems.Entities;
 using ModularEncountersSystems.Helpers;
@@ -404,6 +404,47 @@ namespace ModularEncountersSystems.Behavior.Subsystems {
 				if (playerControlled.Count > 0) {
 
 					targetList = playerControlled;
+
+				}
+
+			}
+
+			//Filter by PreferredGridTypes, if Applicable
+			if (data.PrioritizePreferredGridTypes && data.PreferredGridTypes != null && data.PreferredGridTypes.Count > 0) {
+
+				BehaviorLogger.Write(" - Filtering Potential Preferred Grid Type Targets", BehaviorDebugEnum.TargetAcquisition);
+				var preferredTargets = new List<ITarget>();
+
+				foreach (var typeName in data.PreferredGridTypes) {
+
+					for (int i = 0; i < targetList.Count; i++) {
+
+						var gridEntity = targetList[i].GetParentEntity() as VRage.Game.ModAPI.IMyCubeGrid;
+						if (gridEntity == null)
+							continue;
+
+						bool matches = false;
+
+						if (typeName == "StaticGrid" && gridEntity.IsStatic)
+							matches = true;
+						else if (typeName == "LargeGrid" && !gridEntity.IsStatic && gridEntity.GridSizeEnum == VRage.Game.MyCubeSize.Large)
+							matches = true;
+						else if (typeName == "SmallGrid" && !gridEntity.IsStatic && gridEntity.GridSizeEnum == VRage.Game.MyCubeSize.Small)
+							matches = true;
+
+						if (matches && !preferredTargets.Contains(targetList[i]))
+							preferredTargets.Add(targetList[i]);
+
+					}
+
+					if (preferredTargets.Count > 0)
+						break; // stop at first preference tier that has results
+
+				}
+
+				if (preferredTargets.Count > 0) {
+
+					targetList = preferredTargets;
 
 				}
 

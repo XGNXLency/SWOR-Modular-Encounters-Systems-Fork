@@ -2119,8 +2119,11 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                     if (_behavior.CurrentGrid == null || !_behavior.CurrentGrid.ActiveEntity())
                         fail = true;
 
-
                     if (!fail || !_behavior.AutoPilot.Weapons.HasWorkingWeapons())
+                    {
+                        satisfiedConditions++;
+                    }
+                    else if (fail && ConditionReference.TurretsCountAsWeapons && !_behavior.AutoPilot.Weapons.HasFunctionalTurretsOrControllers())
                     {
                         satisfiedConditions++;
                     }
@@ -2140,8 +2143,11 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                     if (_behavior.CurrentGrid == null || !_behavior.CurrentGrid.ActiveEntity())
                         fail = true;
 
-
                     if (!fail || _behavior.AutoPilot.Weapons.HasWorkingWeapons())
+                    {
+                        satisfiedConditions++;
+                    }
+                    else if (fail && ConditionReference.TurretsCountAsWeapons && _behavior.AutoPilot.Weapons.HasFunctionalTurretsOrControllers())
                     {
                         satisfiedConditions++;
                     }

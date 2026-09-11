@@ -809,87 +809,99 @@ namespace ModularEncountersSystems.Logging {
 				return;
 
 			}
-				
 
+			SpawningType spawnType = SpawningType.None;
+
+			if (array[3] == "SpaceCargoShip")
+				spawnType = SpawningType.SpaceCargoShip;
+			else if (array[3] == "PlanetaryCargoShip")
+				spawnType = SpawningType.PlanetaryCargoShip;
+			else if (array[3] == "RandomEncounter")
+				spawnType = SpawningType.RandomEncounter;
+			else if (array[3] == "PlanetaryInstallation")
+				spawnType = SpawningType.PlanetaryInstallation;
+			else if (array[3] == "BossEncounter")
+				spawnType = SpawningType.BossEncounter;
+			else if (array[3] == "Creature")
+				spawnType = SpawningType.Creature;
+			else if (array[3] == "DroneEncounter")
+				spawnType = SpawningType.DroneEncounter;
+
+			if (spawnType == SpawningType.None) {
+
+				msg.ReturnMessage = "Force Spawn Timer Failed For Unknown Type: " + array[3];
+				return;
+
+			}
+
+			// Also reset the player's individual timer so the cooldown is cleared
 			var player = PlayerSpawnWatcher.GetWatchedPlayer(msg.PlayerId);
+			if (player != null) {
 
-			if (player == null) {
-
-				msg.ReturnMessage = "Command For Force Spawn Timer Could Not Find Associated Player";
-				return;
-
-			}
-
-			PlayerSpawnWatcher.Timer = Settings.General.PlayerWatcherTimerTrigger;
-
-			msg.ReturnMessage = "Attempting To Force Spawn Timer For Type: " + array[3];
-
-			if (array[3] == "SpaceCargoShip") {
-
-				
-				player.SpaceCargoShipTimer = 0;
-				return;
-			
-			}
-
-			if (array[3] == "PlanetaryCargoShip") {
-
-				player.AtmoCargoShipTimer = 0;
-				return;
-
-			}
-
-			if (array[3] == "Creature") {
-
-				player.CreatureCheckTimer = 0;
-				return;
-
-			}
-
-			if (array[3] == "RandomEncounter") {
-
-				player.RandomEncounterCheckTimer = 0;
-				player.RandomEncounterCoolDownTimer = 0;
-				player.RandomEncounterDistanceCoordCheck = Vector3D.Forward * (Settings.RandomEncounters.PlayerTravelDistance * 20) + msg.PlayerPosition;
-				return;
-
-			}
-
-			if (array[3] == "PlanetaryInstallation") {
-
-				player.PlanetaryInstallationCheckTimer = 0;
-				player.PlanetaryInstallationCooldownTimer = 0;
-				var planet = PlanetManager.GetNearestPlanet(msg.PlayerPosition);
-
-				if (planet != null) {
-
-					var up = planet.UpAtPosition(msg.PlayerPosition);
-					player.InstallationDistanceCoordCheck = VectorHelper.RandomPerpendicular(up) * (Settings.PlanetaryInstallations.PlayerDistanceSpawnTrigger * 1.5) + msg.PlayerPosition;
-
+				if (spawnType == SpawningType.SpaceCargoShip)
+					player.SpaceCargoShipTimer = 0;
+				else if (spawnType == SpawningType.PlanetaryCargoShip)
+					player.AtmoCargoShipTimer = 0;
+				else if (spawnType == SpawningType.RandomEncounter) {
+					player.RandomEncounterCheckTimer = 0;
+					player.RandomEncounterCoolDownTimer = 0;
+					player.RandomEncounterDistanceCoordCheck = VRageMath.Vector3D.Forward * (Settings.RandomEncounters.PlayerTravelDistance * 20) + msg.PlayerPosition;
+				} else if (spawnType == SpawningType.PlanetaryInstallation) {
+					player.PlanetaryInstallationCheckTimer = 0;
+					player.PlanetaryInstallationCooldownTimer = 0;
+					var planet = PlanetManager.GetNearestPlanet(msg.PlayerPosition);
+					if (planet != null) {
+						var up = planet.UpAtPosition(msg.PlayerPosition);
+						player.InstallationDistanceCoordCheck = VectorHelper.RandomPerpendicular(up) * (Settings.PlanetaryInstallations.PlayerDistanceSpawnTrigger * 1.5) + msg.PlayerPosition;
+					}
+				} else if (spawnType == SpawningType.BossEncounter) {
+					player.BossEncounterCheckTimer = 0;
+					player.BossEncounterCooldownTimer = 0;
+					player.BossEncounterActive = false;
+				} else if (spawnType == SpawningType.Creature)
+					player.CreatureCheckTimer = 0;
+				else if (spawnType == SpawningType.DroneEncounter) {
+					player.DroneEncounterTimer = 0;
+					player.DroneEncounterTimerCooldownTimer = 0;
 				}
-				
+
+			}
+
+			// Call CalculateSpawn directly with adminSpawn=true to avoid triggering a
+			// synchronous player-watcher tick (which caused a stack overflow crash).
+			msg.ReturnMessage = "Attempting Force Spawn For Type: " + array[3];
+			SpawnLogger.Write("ForceSpawnTimer: Directly calling CalculateSpawn for type: " + array[3], SpawnerDebugEnum.Settings);
+
+			// Use a fresh position lookup - msg.PlayerPosition may be stale or zero for dedicated server admins.
+			VRageMath.Vector3D spawnCoords = msg.PlayerPosition;
+
+			if (player != null) {
+
+				var freshPos = player.Player?.GetPosition() ?? VRageMath.Vector3D.Zero;
+				if (freshPos != VRageMath.Vector3D.Zero)
+					spawnCoords = freshPos;
+
+			}
+
+			if (spawnCoords == VRageMath.Vector3D.Zero)
+				spawnCoords = msg.CameraPosition;
+
+			if (spawnCoords == VRageMath.Vector3D.Zero) {
+
+				msg.ReturnMessage = "ForceSpawnTimer: Could not determine a valid position to spawn from.";
 				return;
 
 			}
 
-			if (array[3] == "BossEncounter") {
+			try {
 
-				player.BossEncounterCheckTimer = 0;
-				player.BossEncounterCooldownTimer = 0;
-				player.BossEncounterActive = false;
-				return;
+				SpawnRequest.CalculateSpawn(spawnCoords, "MES-ForceSpawnTimer", spawnType, false, true);
 
-			}
+			} catch (Exception e) {
 
-			if (array[3] == "DroneEncounter") {
-
-				player.DroneEncounterTimer = 0;
-				player.DroneEncounterTimerCooldownTimer = 0;
-				return;
+				SpawnLogger.Write(e.ToString(), SpawnerDebugEnum.Error, true);
 
 			}
-
-			msg.ReturnMessage = "Force Spawn Timer Failed For Unknown Type: " + array[3];
 
 		}
 
@@ -1932,7 +1944,9 @@ namespace ModularEncountersSystems.Logging {
 			}
 
 			var threatLevel = SpawnConditions.GetThreatLevel(defaultDist, false, msg.PlayerPosition);
-			MyVisualScriptLogicProvider.ShowNotification("Threat Score At Position With " + defaultDist + " Meters: " + threatLevel, 5000, "White", msg.PlayerId);
+			msg.Mode = ChatMsgMode.ReturnMessage;
+			msg.ReturnMessage = "Threat Score Within " + defaultDist + " Meters: " + threatLevel;
+			MyVisualScriptLogicProvider.ShowNotification(msg.ReturnMessage, 5000, "White", msg.PlayerId);
 
 		}
 

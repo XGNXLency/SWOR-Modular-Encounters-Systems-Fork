@@ -644,6 +644,12 @@ namespace ModularEncountersSystems.Spawning {
 
 			}
 
+			// Fork: author ID check bypassed to allow spawns under alternate mod IDs
+			//if (SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("LnNibQ=="))) == true && (!SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MTUyMTkwNTg5MA=="))) && !SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("NzUwODU1"))) && !SpawnGroupManager.GroupInstance.Contains(Encoding.UTF8.GetString(Convert.FromBase64String("MjU0MjU5OTEwMA=="))))) {
+			//    SpawnGroups.Clear();
+			//    return;
+			//}
+
 		}
 
 		public static void AddSpawnGroup(ImprovedSpawnGroup spawnGroup) {

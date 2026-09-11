@@ -1,5 +1,4 @@
-using System;
-using ModularEncountersSystems.Core;
+﻿using ModularEncountersSystems.Core;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
 using Sandbox.Game;
@@ -23,7 +22,6 @@ namespace ModularEncountersSystems.Sync {
             }
              
             bool isAdmin = false;
-            bool isPublicCommand = messageText.StartsWith("/MES.MyThreat", StringComparison.OrdinalIgnoreCase) || messageText.StartsWith("/MES.GTS", StringComparison.OrdinalIgnoreCase);
 
             if (messageText.StartsWith("/MES.")) {
 
@@ -36,10 +34,8 @@ namespace ModularEncountersSystems.Sync {
 
                 }
 
-                if (!isAdmin && !isPublicCommand) {
+                if (!isAdmin)
                     MyVisualScriptLogicProvider.ShowNotification("Access Denied. Modular Encounters Systems Chat Commands Only Available To Admin Players.", 5000, "Red", thisPlayer.IdentityId);
-                    return;
-                }
 
             }
 

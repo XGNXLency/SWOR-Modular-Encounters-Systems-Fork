@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using ModularEncountersSystems.API;
@@ -751,6 +751,26 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Weapons {
 			foreach (var weapon in this.TurretControllers) {
 
 				if (weapon.IsValid() && weapon.IsActive() && weapon.HasAmmo())
+					return true;
+
+			}
+
+			return false;
+
+		}
+
+		public bool HasFunctionalTurretsOrControllers() {
+
+			foreach (var weapon in this.Turrets) {
+
+				if (weapon.IsValid() && weapon.IsActive())
+					return true;
+
+			}
+
+			foreach (var weapon in this.TurretControllers) {
+
+				if (weapon.IsValid() && weapon.IsActive())
 					return true;
 
 			}

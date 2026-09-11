@@ -1,4 +1,4 @@
-using ModularEncountersSystems.Configuration;
+﻿using ModularEncountersSystems.Configuration;
 using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
 using ModularEncountersSystems.Progression;
@@ -188,8 +188,6 @@ namespace ModularEncountersSystems.Entities {
 				}
 
 			}
-
-			GridManager.RefreshGridOwnerships();
 
 		}
 

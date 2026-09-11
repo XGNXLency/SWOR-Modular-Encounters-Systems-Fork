@@ -1,4 +1,4 @@
-﻿using ProtoBuf;
+using ProtoBuf;
 using ModularEncountersSystems.Behavior.Subsystems.AutoPilot;
 using ModularEncountersSystems.Helpers;
 using Sandbox.ModAPI;
@@ -533,6 +533,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 		public List<string> InstanceEventGroupReplaceKeys;
 		public List<string> InstanceEventGroupReplaceValues;
 
+		public bool InitiateTargetLock;
+		public bool ClearTargetLock;
+
 
 
 		public Dictionary<string, Action<string, object>> EditorReference;
@@ -1057,6 +1060,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 			InstanceEventGroupReplaceKeys = new List<string>();
 			InstanceEventGroupReplaceValues = new List<string>();
 
+			InitiateTargetLock = false;
+			ClearTargetLock = false;
+
 
 
 		EditorReference = new Dictionary<string, Action<string, object>> {
@@ -1460,6 +1466,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
                 {"InstanceEventGroupId", (s, o) => TagParse.TagStringCheck(s, ref InstanceEventGroupId) },
                 {"InstanceEventGroupReplaceKeys", (s, o) => TagParse.TagStringListCheck(s, ref InstanceEventGroupReplaceKeys) },
                 {"InstanceEventGroupReplaceValues", (s, o) => TagParse.TagStringListCheck(s, ref InstanceEventGroupReplaceValues) },
+
+                {"InitiateTargetLock", (s, o) => TagParse.TagBoolCheck(s, ref InitiateTargetLock) },
+                {"ClearTargetLock", (s, o) => TagParse.TagBoolCheck(s, ref ClearTargetLock) },
 
                 };
 

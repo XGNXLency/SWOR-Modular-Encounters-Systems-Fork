@@ -271,7 +271,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 
 		public bool HasWeapons;
 		public bool HasNoWeapons;
-
+		public bool TurretsCountAsWeapons;
 
 
 
@@ -538,6 +538,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 
 			HasWeapons =false;
 			HasNoWeapons=false;
+			TurretsCountAsWeapons=false;
 
 			ProfileSubtypeId = "";
 
@@ -745,6 +746,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger {
 
 				{"HasWeapons", (s, o) => TagParse.TagBoolCheck(s, ref HasWeapons) },//HasWeapons
 				{"HasNoWeapons", (s, o) => TagParse.TagBoolCheck(s, ref HasNoWeapons) },//CheckHealthPercentage
+				{"TurretsCountAsWeapons", (s, o) => TagParse.TagBoolCheck(s, ref TurretsCountAsWeapons) },//TurretsCountAsWeapons
 
 
 

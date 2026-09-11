@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using ProtoBuf;
 using ModularEncountersSystems.Helpers;
@@ -162,6 +162,12 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 		[ProtoMember(51)]
 		public double MaxAirDensity;
 
+		[ProtoMember(52)]
+		public List<string> PreferredGridTypes;
+
+		[ProtoMember(53)]
+		public bool PrioritizePreferredGridTypes;
+
 		public TargetProfile() {
 
 			UseCustomTargeting = false;
@@ -236,6 +242,8 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 			MinAirDensity = -1;
 			MaxAirDensity = -1;
+
+			PrioritizePreferredGridTypes = false;
 
 			ProfileSubtypeId = "";
 
@@ -596,6 +604,20 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 					if (tag.Contains("[MaxAirDensity:") == true) {
 
 						TagParse.TagDoubleCheck(tag, ref MaxAirDensity);
+
+					}
+
+					//PreferredGridTypes
+					if (tag.Contains("[PreferredGridTypes:") == true) {
+
+						TagParse.TagStringListCheck(tag, ref PreferredGridTypes);
+
+					}
+
+					//PrioritizePreferredGridTypes
+					if (tag.Contains("[PrioritizePreferredGridTypes:") == true) {
+
+						TagParse.TagBoolCheck(tag, ref PrioritizePreferredGridTypes);
 
 					}
 

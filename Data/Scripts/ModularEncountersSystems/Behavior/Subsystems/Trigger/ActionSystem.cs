@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.API;
+using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior.Subsystems.AutoPilot;
 using ModularEncountersSystems.BlockLogic;
 using ModularEncountersSystems.Entities;
@@ -1042,6 +1042,41 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                     BehaviorLogger.Write(actions.ProfileSubtypeId + ": Attempting Target Profile Change", BehaviorDebugEnum.Action);
                     _autopilot.Targeting.UseNewTargetProfile = true;
                     _autopilot.Targeting.NewTargetProfileName = actions.NewTargetProfileId;
+
+                }
+
+                //InitiateTargetLock
+                lastAction = "InitiateTargetLock";
+                if (actions.InitiateTargetLock == true)
+                {
+
+                    BehaviorLogger.Write(actions.ProfileSubtypeId + ": Initiating Target Lock", BehaviorDebugEnum.Action);
+
+                    if (_autopilot.Targeting.HasTarget()) {
+
+                        // Lock onto the current autopilot target directly
+                        _autopilot.Targeting.LockOnTarget = _autopilot.Targeting.Target;
+                        _autopilot.Targeting.LockOnActive = true;
+                        _autopilot.Targeting.ApplyLockOn = true;
+
+                    } else {
+
+                        // No current target — trigger the auto discovery loop
+                        _autopilot.Targeting.ManualLockOnRequest = true;
+
+                    }
+
+                }
+
+                //ClearTargetLock
+                lastAction = "ClearTargetLock";
+                if (actions.ClearTargetLock == true)
+                {
+
+                    BehaviorLogger.Write(actions.ProfileSubtypeId + ": Clearing Target Lock", BehaviorDebugEnum.Action);
+                    _autopilot.Targeting.ClearLockOn = true;
+                    _autopilot.Targeting.LockOnActive = false;
+                    _autopilot.Targeting.LockOnTarget = null;
 
                 }
 

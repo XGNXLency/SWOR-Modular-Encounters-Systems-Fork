@@ -1,5 +1,4 @@
-using System;
-using ModularEncountersSystems.API;
+﻿using ModularEncountersSystems.API;
 using ModularEncountersSystems.Behavior;
 using ModularEncountersSystems.Configuration.Editor;
 using ModularEncountersSystems.Core;
@@ -105,16 +104,6 @@ namespace ModularEncountersSystems.Sync {
 			//Determine Where Command Belongs
 
 			SpawnLogger.Write("Chat Command Received: " + Message, SpawnerDebugEnum.Settings);
-
-			//MyThreat
-			if (Message.StartsWith("/MES.MyThreat", StringComparison.OrdinalIgnoreCase)) {
-				var split = Message.Split('.');
-				string dist = "5000";
-				if (split.Length >= 3 && !string.IsNullOrWhiteSpace(split[2]))
-					dist = split[2];
-				LoggerTools.GetThreatScore(this, new string[] { "", "Info", "GetThreatScore", dist });
-				return true;
-			}
 
 			//Spawn
 			if (Message.StartsWith("/MES.Spawn."))
@@ -510,30 +499,6 @@ namespace ModularEncountersSystems.Sync {
 			if (array[2] == "ChangeCounter") {
 
 				LoggerTools.ChangeCounter(this, array);
-				return true;
-
-			}
-
-			//MES.Debug.GetEvents
-			if (array[2] == "GetEvents") {
-
-				LoggerTools.GetEvents(this);
-				return true;
-
-			}
-
-			//MES.Debug.ResetEventCooldown
-			if (array[2] == "ResetEventCooldown") {
-
-				LoggerTools.ResetEventCooldown(this, array);
-				return true;
-
-			}
-
-			//MES.Debug.TriggerEvent
-			if (array[2] == "TriggerEvent") {
-
-				LoggerTools.TriggerEvent(this, array);
 				return true;
 
 			}
