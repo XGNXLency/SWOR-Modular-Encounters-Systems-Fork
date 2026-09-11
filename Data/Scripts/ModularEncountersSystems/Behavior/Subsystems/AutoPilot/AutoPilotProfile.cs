@@ -137,6 +137,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 		public double CameraDetectionMaxRange;
 
 		public bool RotateTowardsTargetWhileAtPosition;
+		public bool RotateToTargetWhileApproaching;
 
 		//Attack Run
 		public double AttackRunDistanceSpace;
@@ -285,6 +286,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			CameraDetectionMaxRange = 1800;
 
 			RotateTowardsTargetWhileAtPosition = false;
+			RotateToTargetWhileApproaching = false;
 
 			AttackRunDistanceSpace = 75;
 			AttackRunDistancePlanet = 100;
@@ -954,6 +956,13 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
             if (tag.Contains("[RotateTowardsTargetWhileAtPosition:") == true) {
 
 				TagParse.TagBoolCheck(tag, ref this.RotateTowardsTargetWhileAtPosition);
+
+			}
+
+			//RotateToTargetWhileApproaching
+			if (tag.Contains("[RotateToTargetWhileApproaching:") == true) {
+
+				TagParse.TagBoolCheck(tag, ref this.RotateToTargetWhileApproaching);
 
 			}
 

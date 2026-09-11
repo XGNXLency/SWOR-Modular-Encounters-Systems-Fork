@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Helpers;
+using ModularEncountersSystems.Helpers;
 using ModularEncountersSystems.Logging;
 using Sandbox.Game;
 using Sandbox.ModAPI;
@@ -196,7 +196,29 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 			}
 
-			if (this.AngleToCurrentWaypoint > this.Data.AngleAllowedForForwardThrust) {
+			double allowedForwardThrustAngle = this.Data.AngleAllowedForForwardThrust;
+
+			if (InGravity() && IndirectWaypointType.HasFlag(WaypointModificationEnum.PlanetPathingAscend)) {
+
+				// Apply upward lift thrust to assist pull-out and prevent losing lift/stalling into ground
+				_thrustToApply.SetY(true, false, 1, _orientation);
+
+				// If the ship's nose is pitched at or above the local horizon (not pointed down at the ground),
+				// allow forward thrust up to 80 degrees to maintain forward airspeed during ascent.
+				double forwardUpAngle = VectorHelper.GetAngleBetweenDirections(RefBlockMatrixRotation.Forward, _upDirection);
+				if (forwardUpAngle <= 90) {
+
+					allowedForwardThrustAngle = Math.Max(allowedForwardThrustAngle, 80.0);
+
+				}
+
+			} else {
+
+				_thrustToApply.SetY(false, false, 0, _orientation);
+
+			}
+
+			if (this.AngleToCurrentWaypoint > allowedForwardThrustAngle) {
 
 				_debugThrustForwardMode = "Thrust Angle Not Matched";
 				_thrustToApply.SetZ(false, false, 0, _orientation);

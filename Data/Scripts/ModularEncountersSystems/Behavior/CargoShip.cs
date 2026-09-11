@@ -105,6 +105,8 @@ namespace ModularEncountersSystems.Behavior {
 			if (_behavior.Mode == BehaviorMode.Init) {
 
 				_behavior.AutoPilot.State.CargoShipWaypoints.Clear();
+				if (!_behavior.AutoPilot.State.CargoShipDespawn.Valid)
+					_behavior.AutoPilot.State.CargoShipDespawn = new EncounterWaypoint();
 
 				foreach (var waypoint in CustomWaypoints) {
 
@@ -113,7 +115,8 @@ namespace ModularEncountersSystems.Behavior {
 				}
 
 				SelectNextWaypoint();
-				_behavior.ChangeCoreBehaviorMode(BehaviorMode.WaitAtWaypoint);
+				_behavior.AutoPilot.ActivateAutoPilot(_cargoShipWaypoint.GetCoords(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing, CheckEnum.Yes, CheckEnum.No);
+				_behavior.ChangeCoreBehaviorMode(BehaviorMode.ApproachWaypoint);
 
 				if (GetSpeedFromSpawnGroup && _behavior.CurrentGrid.Npc != null && _behavior.CurrentGrid.Npc.Attributes.IsCargoShip) {
 
@@ -319,7 +322,12 @@ namespace ModularEncountersSystems.Behavior {
                 //BehaviorLogger.Write("Current Grid Null: " + (_behavior.CurrentGrid == null), BehaviorDebugEnum.Dev);
                 //BehaviorLogger.Write("NPC Data Null: " + (_behavior.CurrentGrid.Npc == null), BehaviorDebugEnum.Dev);
 
-                if (_behavior.CurrentGrid.Npc != null && _behavior.CurrentGrid.Npc.EndCoords != Vector3D.Zero && _behavior.CurrentGrid.Npc.StartCoords != _behavior.CurrentGrid.Npc.EndCoords)
+                bool useSpawnEndCoords = _behavior.CurrentGrid.Npc != null 
+                    && _behavior.CurrentGrid.Npc.EndCoords != Vector3D.Zero 
+                    && _behavior.CurrentGrid.Npc.StartCoords != _behavior.CurrentGrid.Npc.EndCoords
+                    && _behavior.AutoPilot.Data.WaypointMaxAngleFromForward >= 180;
+
+                if (useSpawnEndCoords)
                     despawnCoords = _behavior.CurrentGrid.Npc.EndCoords;
 
                 if (despawnCoords == Vector3D.Zero)
@@ -333,6 +341,8 @@ namespace ModularEncountersSystems.Behavior {
                 BehaviorLogger.Write("Setting Autopilot State", BehaviorDebugEnum.Dev);
                 _behavior.AutoPilot.State.CargoShipDespawn = new EncounterWaypoint(despawnCoords);
                 _behavior.BehaviorSettings.DespawnCoords = despawnCoords;
+                if (_behavior.CurrentGrid.Npc != null)
+                    _behavior.CurrentGrid.Npc.EndCoords = despawnCoords;
 
 			}
 

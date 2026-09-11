@@ -330,21 +330,6 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
 
                     BehaviorLogger.Write(actions.ProfileSubtypeId + ": Changing AutoPilot MinAltitude To: " + actions.NewAutopilotMinAltitude.ToString(), BehaviorDebugEnum.Action);
                     _autopilot.State.MinAltitudeOverride = actions.NewAutopilotMinAltitude;
-                    var blockList = BlockCollectionHelper.GetGridControllers(RemoteControl.SlimBlock.CubeGrid);
-
-                    foreach (var block in blockList)
-                    {
-
-                        var tBlock = block as IMyRemoteControl;
-
-                        if (tBlock != null)
-                        {
-
-                            tBlock.SpeedLimit = actions.NewAutopilotMinAltitude >= 0 ? actions.NewAutopilotMinAltitude : 100;
-
-                        }
-
-                    }
 
                 }
 
@@ -452,7 +437,11 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                 if (actions.RecalculateDespawnCoords && this.RemoteControl != null)
                 {
 
-                    _behavior.AutoPilot.State.CargoShipDespawn = new EncounterWaypoint(_behavior.AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition()));
+                    var newDespawn = _behavior.AutoPilot.CalculateDespawnCoords(this.RemoteControl.GetPosition());
+                    _behavior.AutoPilot.State.CargoShipDespawn = new EncounterWaypoint(newDespawn);
+                    _behavior.BehaviorSettings.DespawnCoords = newDespawn;
+                    if (_behavior.CurrentGrid?.Npc != null)
+                        _behavior.CurrentGrid.Npc.EndCoords = newDespawn;
 
                 }
 
@@ -1045,40 +1034,6 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
 
                 }
 
-                //InitiateTargetLock
-                lastAction = "InitiateTargetLock";
-                if (actions.InitiateTargetLock == true)
-                {
-
-                    BehaviorLogger.Write(actions.ProfileSubtypeId + ": Initiating Target Lock", BehaviorDebugEnum.Action);
-
-                    if (_autopilot.Targeting.HasTarget()) {
-
-                        // Lock onto the current autopilot target directly
-                        _autopilot.Targeting.LockOnTarget = _autopilot.Targeting.Target;
-                        _autopilot.Targeting.LockOnActive = true;
-                        _autopilot.Targeting.ApplyLockOn = true;
-
-                    } else {
-
-                        // No current target — trigger the auto discovery loop
-                        _autopilot.Targeting.ManualLockOnRequest = true;
-
-                    }
-
-                }
-
-                //ClearTargetLock
-                lastAction = "ClearTargetLock";
-                if (actions.ClearTargetLock == true)
-                {
-
-                    BehaviorLogger.Write(actions.ProfileSubtypeId + ": Clearing Target Lock", BehaviorDebugEnum.Action);
-                    _autopilot.Targeting.ClearLockOn = true;
-                    _autopilot.Targeting.LockOnActive = false;
-                    _autopilot.Targeting.LockOnTarget = null;
-
-                }
 
                 //ChangeReputationWithPlayers
                 lastAction = "ChangeReputationWithPlayers";
@@ -1767,6 +1722,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                 {
 
                     _behavior.AutoPilot.SetAutoPilotDataMode(actions.AutopilotProfile);
+                    _autopilot.State.MinAltitudeOverride = -1;
 
                 }
 

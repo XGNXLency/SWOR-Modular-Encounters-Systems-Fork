@@ -1,4 +1,4 @@
-﻿using ModularEncountersSystems.Helpers;
+using ModularEncountersSystems.Helpers;
 using Sandbox.Game;
 using System;
 using System.Collections.Generic;
@@ -133,8 +133,13 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 			if (Targeting.HasTarget()) {
 
-				if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToTarget) || CurrentMode.HasFlag(NewAutoPilotMode.Ram))
-					rotationTarget = Targeting.TargetLastKnownCoords;
+				if (CurrentMode.HasFlag(NewAutoPilotMode.RotateToTarget) || CurrentMode.HasFlag(NewAutoPilotMode.Ram) || (Data != null && Data.RotateToTargetWhileApproaching)) {
+
+					var targetCoords = _calculatedWeaponPredictionWaypoint != Vector3D.Zero ? _calculatedWeaponPredictionWaypoint : Targeting.TargetLastKnownCoords;
+					if (targetCoords != Vector3D.Zero)
+						rotationTarget = targetCoords;
+
+				}
 
 			}
 

@@ -77,11 +77,29 @@ namespace ModularEncountersSystems.Behavior {
 
 		}
 
+		public bool FighterEngageUseSafePlanetPathing {
+
+			get {
+
+				return _behavior.AutoPilot?.Data != null ? _behavior.AutoPilot.Data.AttackRunUseSafePlanetPathing : _fighterEngageUseSafePlanetPathing;
+
+			}
+
+			set {
+
+				_fighterEngageUseSafePlanetPathing = value;
+
+			}
+
+		}
+
 		private double _fighterEngageDistanceSpace;
 		private double _fighterEngageDistancePlanet;
 
 		private double _fighterDisengageDistanceSpace;
 		private double _fighterDisengageDistancePlanet;
+
+		private bool _fighterEngageUseSafePlanetPathing;
 
 		internal CoreBehavior _behavior;
 
@@ -105,6 +123,8 @@ namespace ModularEncountersSystems.Behavior {
 			_fighterDisengageDistancePlanet = -1;
 
 			_defaultWeaponProfile = "MES-Weapons-GenericStandard";
+
+			_fighterEngageUseSafePlanetPathing = true;
 
 			Counter = 0;
 
@@ -134,7 +154,7 @@ namespace ModularEncountersSystems.Behavior {
 				} else {
 
 					_behavior.ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
+					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | ((_behavior.AutoPilot.InGravity() || FighterEngageUseSafePlanetPathing) ? NewAutoPilotMode.PlanetaryPathing : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				}
 
@@ -151,7 +171,7 @@ namespace ModularEncountersSystems.Behavior {
 				if(_behavior.AutoPilot.Targeting.HasTarget()) {
 
 					_behavior.ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
-					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
+					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | ((_behavior.AutoPilot.InGravity() || FighterEngageUseSafePlanetPathing) ? NewAutoPilotMode.PlanetaryPathing : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 
 				} else if(_behavior.Despawn.NoTargetExpire == true){
 
@@ -203,7 +223,7 @@ namespace ModularEncountersSystems.Behavior {
 
 				if (outRange) {
 
-					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | NewAutoPilotMode.PlanetaryPathing | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
+					_behavior.AutoPilot.ActivateAutoPilot(_behavior.RemoteControl.GetPosition(), NewAutoPilotMode.RotateToWaypoint | NewAutoPilotMode.ThrustForward | ((_behavior.AutoPilot.InGravity() || FighterEngageUseSafePlanetPathing) ? NewAutoPilotMode.PlanetaryPathing : NewAutoPilotMode.None) | NewAutoPilotMode.WaypointFromTarget, CheckEnum.Yes, CheckEnum.No);
 					_behavior.ChangeCoreBehaviorMode(BehaviorMode.ApproachTarget);
 					_behavior.BehaviorTriggerB = true;
 
@@ -277,6 +297,13 @@ namespace ModularEncountersSystems.Behavior {
 					if (tag.Contains("[FighterDisengageDistancePlanet:") == true) {
 
 						TagParse.TagDoubleCheck(tag, ref _fighterDisengageDistancePlanet);
+
+					}
+
+					//FighterEngageUseSafePlanetPathing
+					if (tag.Contains("[FighterEngageUseSafePlanetPathing:") == true) {
+
+						TagParse.TagBoolCheck(tag, ref _fighterEngageUseSafePlanetPathing);
 
 					}
 

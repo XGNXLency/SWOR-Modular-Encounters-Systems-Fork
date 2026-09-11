@@ -228,10 +228,13 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Weapons {
 
 					if (collision.Type == CollisionType.Voxel && !collision.CollisionIsWater)
 					{
-						var voxelThreshold = _behavior.AutoPilot.InGravity() ? Math.Min(maxTargetTrajectory * 0.75, maxTargetTrajectory - 150) : (maxTargetTrajectory - 5);
-						if (voxelThreshold > 0 && collision.HasTarget(voxelThreshold))
+						if (!_behavior.AutoPilot.InGravity() || !canShootTarget)
 						{
-							hasCollision = true;
+							var voxelThreshold = maxTargetTrajectory - 5;
+							if (voxelThreshold > 0 && collision.HasTarget(voxelThreshold))
+							{
+								hasCollision = true;
+							}
 						}
 					}
 

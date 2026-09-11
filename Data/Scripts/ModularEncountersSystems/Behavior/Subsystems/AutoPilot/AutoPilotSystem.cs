@@ -1622,8 +1622,8 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 				var upAtRoughCoords = Vector3D.Normalize(roughPerpendicularCoords - worldCenter);
 				var centerToRoughDist = Vector3D.Distance(worldCenter, roughPerpendicularCoords);
 				var centerToSurfaceDist = Vector3D.Distance(worldCenter, roughCoordsSurface);
-				var minToIdealPlanetAltitude = MathTools.ValueBetween(MinAltitude, Data.IdealPlanetAltitude);
-				var offsetAlt = _offsetAltitude > minToIdealPlanetAltitude ? _offsetAltitude : minToIdealPlanetAltitude;
+				var minAlt = Math.Max(MinAltitude, 10);
+				var offsetAlt = _offsetAltitude > minAlt ? _offsetAltitude : minAlt;
 
 				if ((centerToRoughDist - centerToSurfaceDist) < MinAltitude) {
 
@@ -1843,6 +1843,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 			Vector3D highestTerrainPoint = Vector3D.Zero;
 			double highestTerrainCoreDistance = 0;
+			bool lineOfSightObstructed = false;
 
 			foreach (Vector3D pathPoint in stepsList) {
 
@@ -1856,18 +1857,27 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 				}
 
+				double pathPointCoreDistance = Vector3D.Distance(pathPoint, planetPosition);
+				double distFromTarget = Vector3D.Distance(pathPoint, _pendingWaypoint);
+				// Check if this point along the direct 3D flight path passes inside terrain or within MinAltitude of it.
+				// (Ignore terminal 150m proximity to target if target is at ground level)
+				if (distFromTarget > 150 && (pathPointCoreDistance - surfaceCoreDistance) < this.MinAltitude) {
+
+					lineOfSightObstructed = true;
+
+				}
+
 			}
 
 			double myAltitudeDifferenceFromHighestTerrain = myCoreDistance - highestTerrainCoreDistance;
 			double waypointAltitudeDifferenceFromHighestTerrain = waypointCoreDistance - highestTerrainCoreDistance;
 
-			//Terrain Higher Than Me
-			if (myAltitudeDifferenceFromHighestTerrain < this.MinAltitude) {
+			//Terrain Higher Than Me or Path Obstructed
+			if (myAltitudeDifferenceFromHighestTerrain < this.MinAltitude || lineOfSightObstructed) {
 
-				//BehaviorLogger.Write("Planet Pathing: Terrain Higher Than NPC", BehaviorDebugEnum.Dev);
 				IndirectWaypointType |= WaypointModificationEnum.PlanetPathingAscend;
 				_requiresClimbToIdealAltitude = true;
-				_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+				_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance, distanceToTarget);
 				_calculatedPlanetPathWaypoint = _pendingWaypoint;
 				return;
 
@@ -1876,13 +1886,13 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			//Check if Climb is still required
 			if (_requiresClimbToIdealAltitude) {
 
-				if (CheckAltitudeTolerance(myAltitudeDifferenceFromHighestTerrain, this.Data.IdealPlanetAltitude, this.Data.AltitudeTolerance)) {
+				if (CheckAltitudeTolerance(myAltitudeDifferenceFromHighestTerrain, this.Data.IdealPlanetAltitude, this.Data.AltitudeTolerance) || myAltitudeDifferenceFromHighestTerrain >= this.Data.IdealPlanetAltitude - this.Data.AltitudeTolerance) {
 
 					_requiresClimbToIdealAltitude = false;
 
 				} else {
 
-					_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance);
+					_pendingWaypoint = GetCoordsAboveHighestTerrain(planetPosition, directionToTarget, highestTerrainCoreDistance, distanceToTarget);
 					_calculatedPlanetPathWaypoint = _pendingWaypoint;
 					IndirectWaypointType |= WaypointModificationEnum.PlanetPathingAscend;
 					return;
@@ -1892,7 +1902,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			}
 
 			//No Obstruction Case
-			if (waypointAltitudeDifferenceFromHighestTerrain >= this.MinAltitude) {
+			if (!lineOfSightObstructed && (waypointAltitudeDifferenceFromHighestTerrain >= this.MinAltitude || CurrentMode.HasFlag(NewAutoPilotMode.WaypointFromTarget))) {
 
 				BehaviorLogger.Write("Planet Pathing: No Obstruction", BehaviorDebugEnum.AutoPilot);
 				_calculatedPlanetPathWaypoint = _pendingWaypoint;
@@ -1904,7 +1914,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			Vector3D waypointCoreDirection = Vector3D.Normalize(_pendingWaypoint - planetPosition);
 			_pendingWaypoint = waypointCoreDirection * (highestTerrainCoreDistance + waypointAltitude) + planetPosition;
 			_calculatedPlanetPathWaypoint = _pendingWaypoint;
-			BehaviorLogger.Write("Planet Pathing: Terrain Higher Than Target " + waypointAltitudeDifferenceFromHighestTerrain.ToString(), BehaviorDebugEnum.AutoPilot); ;
+			BehaviorLogger.Write("Planet Pathing: Terrain Higher Than Target " + waypointAltitudeDifferenceFromHighestTerrain.ToString(), BehaviorDebugEnum.AutoPilot);
 
 		}
 
@@ -2075,19 +2085,37 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 		}
 
-		private Vector3D GetCoordsAboveHighestTerrain(Vector3D planetPosition, Vector3D directionToTarget, double highestTerrainDistanceFromCore) {
+		private Vector3D GetCoordsAboveHighestTerrain(Vector3D planetPosition, Vector3D directionToTarget, double highestTerrainDistanceFromCore, double distanceToTarget = -1) {
 
-			//Get position 50m in direction of target
-			var roughForwardStep = directionToTarget * 50 + _myPosition;
+			double myCoreDistance = Vector3D.Distance(_myPosition, planetPosition);
+			double targetCoreDistance = highestTerrainDistanceFromCore + this.Data.IdealPlanetAltitude;
+			double altitudeDifference = Math.Max(0, targetCoreDistance - myCoreDistance);
+			double currentSpeed = MyVelocity.Length();
+
+			// For smooth climb: at a 25 degree climb slope, horizontal distance is altitudeDifference * 2.14.
+			// At speed, lookahead at least 5 seconds of travel, with a minimum of 600m.
+			double forwardStepDistance = Math.Max(600.0, Math.Max(altitudeDifference * 2.14, currentSpeed * 5.0));
+			if (distanceToTarget > 100) {
+				forwardStepDistance = Math.Min(distanceToTarget, forwardStepDistance);
+			}
+
+			var roughForwardStep = directionToTarget * forwardStepDistance + _myPosition;
 
 			var upDirectionFromStep = Vector3D.Normalize(roughForwardStep - planetPosition);
-			return upDirectionFromStep * (highestTerrainDistanceFromCore + this.Data.IdealPlanetAltitude) + planetPosition;
+			return upDirectionFromStep * targetCoreDistance + planetPosition;
 
 		}
 
 		public List<Vector3D> GetPlanetPathSteps(Vector3D startCoords, Vector3D directionToTarget, double distanceToTarget, bool overrideMaxDistance = false) {
 
-			var distanceToUse = MathHelper.Clamp(distanceToTarget, 0, overrideMaxDistance ? distanceToTarget : this.Data.MaxPlanetPathCheckDistance);
+			double maxCheckDistance = this.Data.MaxPlanetPathCheckDistance;
+			if (_remoteControl?.SlimBlock?.CubeGrid?.Physics != null) {
+
+				double speed = _remoteControl.SlimBlock.CubeGrid.Physics.LinearVelocity.Length();
+				maxCheckDistance = Math.Max(maxCheckDistance, Math.Max(2500.0, speed * 12.0));
+
+			}
+			var distanceToUse = MathHelper.Clamp(distanceToTarget, 0, overrideMaxDistance ? distanceToTarget : maxCheckDistance);
 			var result = new List<Vector3D>();
 			double currentPathDistance = 0;
 
