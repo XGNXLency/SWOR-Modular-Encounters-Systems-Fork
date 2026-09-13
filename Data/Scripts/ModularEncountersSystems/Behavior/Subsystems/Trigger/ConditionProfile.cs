@@ -1224,7 +1224,14 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                     else
                     {
 
-                        BehaviorLogger.Write("Altitude Check Failed, Not On Planet", BehaviorDebugEnum.Condition);
+                        if (ConditionReference.MaxAltitude == -1)
+                        {
+                            satisfiedConditions++;
+                        }
+                        else
+                        {
+                            BehaviorLogger.Write("Altitude Check Failed, Not On Planet", BehaviorDebugEnum.Condition);
+                        }
 
                     }
 
@@ -1236,21 +1243,37 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
 
                     usedConditions++;
 
-                    if (_behavior.AutoPilot.Targeting.HasTarget() && _behavior.AutoPilot.CurrentPlanet != null)
+                    if (_behavior.AutoPilot.Targeting.HasTarget())
                     {
-                        var altitude = _behavior.AutoPilot.CurrentPlanet.AltitudeAtPosition(_behavior.AutoPilot.Targeting.TargetLastKnownCoords);
-
-
-                        if ((ConditionReference.MinTargetAltitude == -1 || altitude > ConditionReference.MinTargetAltitude) && (ConditionReference.MaxTargetAltitude == -1 || altitude < ConditionReference.MaxTargetAltitude))
+                        if (_behavior.AutoPilot.CurrentPlanet != null)
                         {
+                            var altitude = _behavior.AutoPilot.CurrentPlanet.AltitudeAtPosition(_behavior.AutoPilot.Targeting.TargetLastKnownCoords);
 
-                            satisfiedConditions++;
+                            if ((ConditionReference.MinTargetAltitude == -1 || altitude > ConditionReference.MinTargetAltitude) && (ConditionReference.MaxTargetAltitude == -1 || altitude < ConditionReference.MaxTargetAltitude))
+                            {
+
+                                satisfiedConditions++;
+
+                            }
+                            else
+                            {
+
+                                BehaviorLogger.Write("Target Altitude Check Failed. Current Altitude: " + altitude, BehaviorDebugEnum.Condition);
+
+                            }
 
                         }
                         else
                         {
 
-                            BehaviorLogger.Write("Altitude Check Failed. Current Altitude: " + _behavior.AutoPilot.MyAltitude, BehaviorDebugEnum.Condition);
+                            if (ConditionReference.MaxTargetAltitude == -1)
+                            {
+                                satisfiedConditions++;
+                            }
+                            else
+                            {
+                                BehaviorLogger.Write("Target Altitude Check Failed, Not On Planet", BehaviorDebugEnum.Condition);
+                            }
 
                         }
 
@@ -1258,7 +1281,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.Trigger
                     else
                     {
 
-                        BehaviorLogger.Write("Altitude Check Failed, Not On Planet", BehaviorDebugEnum.Condition);
+                        BehaviorLogger.Write("Target Altitude Check Failed, No Target", BehaviorDebugEnum.Condition);
 
                     }
 
