@@ -251,16 +251,35 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 			}
 
+			var forwardVelocityAmt = Vector3D.Dot(velocity, _forwardDir);
+			var speedTolerance = Math.Min(Data.MaxSpeedTolerance, MaxSpeed * 0.25);
+
 			if (velocityToTargetAngle > this.Data.MaxVelocityAngleForSpeedControl || velocity.Length() <= 0.1) {
 
-				_debugThrustForwardMode = "Velocity Angle Not Within Range";
-				_thrustToApply.SetZ(true, false, 1, _orientation);
+				if (forwardVelocityAmt < 0 || velocityAmount < MaxSpeed - 0.25) {
+
+					_debugThrustForwardMode = "Velocity Angle Not Within Range";
+					_thrustToApply.SetZ(true, false, 1, _orientation);
+					return;
+
+				}
+
+				if (velocityAmount > MaxSpeed) {
+
+					_debugThrustForwardMode = "Velocity Angle Not Within Range - Brake To Desired Speed";
+					_thrustToApply.SetZ(true, true, 1, _orientation);
+					return;
+
+				}
+
+				_debugThrustForwardMode = "Velocity Angle Not Within Range - Speed Capped";
+				_thrustToApply.SetZ(true, false, 0.0001f, _orientation);
 				return;
 
 			}
 
 			//BehaviorLogger.Write(string.Format("Forward Thrust Check: {0} / {1}", velocityAmount, IdealMaxSpeed - MaxSpeedTolerance), BehaviorDebugEnum.Thrust);
-			if (velocityAmount < MaxSpeed - Data.MaxSpeedTolerance) {
+			if (velocityAmount < MaxSpeed - speedTolerance) {
 
 				_debugThrustForwardMode = "Thrust To Desired Speed";
 				_thrustToApply.SetZ(true, false, 1, _orientation);
@@ -269,7 +288,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			}
 
 			//BehaviorLogger.Write(string.Format("Reverse Thrust Check: {0} / {1}", velocityAmount, IdealMaxSpeed + MaxSpeedTolerance), BehaviorDebugEnum.Thrust);
-			if (velocityAmount > MaxSpeed + Data.MaxSpeedTolerance) {
+			if (velocityAmount > MaxSpeed) {
 
 				_debugThrustForwardMode = "Brake To Desired Speed";
 				_thrustToApply.SetZ(true, true, 1, _orientation);
@@ -396,7 +415,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && upVelocityAmt < MaxSpeed - Data.MaxSpeedTolerance) {
+					var hoverSpeedTolerance = Math.Min(Data.MaxSpeedTolerance, MaxSpeed * 0.25);
+
+					if (!skipCheck && upVelocityAmt < MaxSpeed - hoverSpeedTolerance && velocityAmount < MaxSpeed - 0.25) {
 
 						_thrustToApply.SetY(true, invertedDir, 1, _orientation);
 						skipCheck = true;
@@ -404,7 +425,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && upVelocityAmt > MaxSpeed + Data.MaxSpeedTolerance) {
+					if (!skipCheck && (upVelocityAmt > MaxSpeed || (velocityAmount > MaxSpeed && upVelocityAmt > 0.5))) {
 
 						_thrustToApply.SetY(true, invertedDir ? false : true, 1, _orientation);
 						skipCheck = true;
@@ -471,7 +492,9 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && forwardVelocityAmt < MaxSpeed - Data.MaxSpeedTolerance) {
+					var hoverForwardTolerance = Math.Min(Data.MaxSpeedTolerance, MaxSpeed * 0.25);
+
+					if (!skipCheck && forwardVelocityAmt < MaxSpeed - hoverForwardTolerance && velocityAmount < MaxSpeed - 0.25) {
 
 						_debugThrustForwardMode = "Thrust To Desired Speed";
 						_thrustToApply.SetZ(true, false, 1, _orientation);
@@ -479,7 +502,7 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 
 					}
 
-					if (!skipCheck && forwardVelocityAmt > MaxSpeed + Data.MaxSpeedTolerance) {
+					if (!skipCheck && (forwardVelocityAmt > MaxSpeed || (velocityAmount > MaxSpeed && forwardVelocityAmt > 0.5))) {
 
 						_debugThrustForwardMode = "Brake To Desired Speed";
 						_thrustToApply.SetZ(true, true, 1, _orientation);
@@ -826,6 +849,8 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 			if (Data.ForceDampenersEnabled && !_remoteControl.DampenersOverride)
 				_remoteControl.DampenersOverride = true;
 
+			EnforceSpeedLimit();
+
 			for (int i = ThrustProfiles.Count - 1; i >= 0; i--) {
 
 				var thrust = ThrustProfiles[i];
@@ -840,6 +865,136 @@ namespace ModularEncountersSystems.Behavior.Subsystems.AutoPilot {
 				thrust.ApplyThrust(_thrustToApply);
 
 			}
+
+		}
+
+		//Main Thread
+		//Hard speed cap applied to every thrust command right before it reaches the thruster blocks.
+		//Guarantees that no thrust mode (forward, hover, strafe, ram, collision/ascent overrides, etc)
+		//can push the ship faster than the autopilot profile's MaxSpeed (IdealMaxSpeed or MaxSpeedOverride).
+		public void EnforceSpeedLimit() {
+
+			var grid = _remoteControl?.SlimBlock?.CubeGrid;
+
+			if (grid?.Physics == null || _thrustToApply == null)
+				return;
+
+			var maxSpeed = (double)MaxSpeed;
+
+			if (maxSpeed <= 0) {
+
+				_thrustToApply.DisableAll();
+				return;
+
+			}
+
+			Vector3D velocity = grid.Physics.LinearVelocity;
+			var speed = velocity.Length();
+			var refMatrix = GetReferenceMatrix(_remoteControl.WorldMatrix);
+			var gravity = _remoteControl.GetNaturalGravity();
+			var mass = (double)_remoteControl.CalculateShipMass().TotalMass;
+			bool overLimit = speed > maxSpeed;
+			double excessRatio = overLimit && speed > 0 ? (speed - maxSpeed) / speed : 0;
+
+			LimitReferenceAxisSpeed(Direction.Right, Base6Directions.Direction.Right, Base6Directions.Direction.Left, Vector3D.Dot(velocity, refMatrix.Right), Vector3D.Dot(gravity, refMatrix.Right), speed, maxSpeed, mass, overLimit, excessRatio);
+			LimitReferenceAxisSpeed(Direction.Up, Base6Directions.Direction.Up, Base6Directions.Direction.Down, Vector3D.Dot(velocity, refMatrix.Up), Vector3D.Dot(gravity, refMatrix.Up), speed, maxSpeed, mass, overLimit, excessRatio);
+			LimitReferenceAxisSpeed(Direction.Forward, Base6Directions.Direction.Forward, Base6Directions.Direction.Backward, Vector3D.Dot(velocity, refMatrix.Forward), Vector3D.Dot(gravity, refMatrix.Forward), speed, maxSpeed, mass, overLimit, excessRatio);
+
+		}
+
+		//Axis values are in reference-block space: positive = Right / Up / Forward, negative = Left / Down / Backward.
+		private void LimitReferenceAxisSpeed(Direction refDir, Base6Directions.Direction posBaseDir, Base6Directions.Direction negBaseDir, double axisVelocity, double axisGravity, double totalSpeed, double maxSpeed, double mass, bool overLimit, double excessRatio) {
+
+			var data = _thrustToApply.GetThrustDataFromDirection(refDir, _orientation);
+			bool control = data.X == 1;
+			bool invert = data.Y == -1;
+			float strength = (float)data.Z;
+
+			if (overLimit) {
+
+				var axisExcess = Math.Abs(axisVelocity) * excessRatio;
+
+				//If this axis is contributing to the overspeed and either autopilot has overridden this axis
+				//or dampeners are off, actively brake along this axis to shed the excess velocity.
+				if (Math.Abs(axisVelocity) > 0.25 && axisExcess >= 0.05 && (control || !_remoteControl.DampenersOverride)) {
+
+					bool brakeInvert = axisVelocity > 0;
+					var brakeDir = brakeInvert ? negBaseDir : posBaseDir;
+					var brakeForce = GetEffectiveThrustInDirection(brakeDir);
+					var brakeAccel = mass > 0 ? brakeForce / mass : 0;
+					//Autopilot updates thrust every 15 ticks (~0.25s); scale braking so we don't over-brake past MaxSpeed.
+					var maxDeltaV = Math.Max(1.0, brakeAccel * 0.3);
+					float brakeStrength = (float)MathHelper.Clamp(axisExcess / maxDeltaV, 0.05, 1.0);
+					SetReferenceAxisThrust(refDir, true, brakeInvert, brakeStrength);
+					return;
+
+				}
+
+				//If not braking on this axis, prevent any thrust that would add speed along the direction of motion.
+				if (control && strength > 0.001f) {
+
+					int thrustSign = invert ? -1 : 1;
+
+					if (axisVelocity * thrustSign >= -0.25)
+						SetReferenceAxisThrust(refDir, true, invert, 0.0001f);
+
+				}
+
+				return;
+
+			}
+
+			//Not over the limit yet: check if active thrust on this axis could push the ship over MaxSpeed before the next update (~0.25s).
+			if (!control || strength <= 0.001f)
+				return;
+
+			int sign = invert ? -1 : 1;
+			double signedVelocity = axisVelocity * sign;
+			double signedGravity = axisGravity * sign;
+
+			//Thrust opposing significant motion on this axis only slows the ship down.
+			if (signedVelocity < -0.5)
+				return;
+
+			var thrustDir = invert ? negBaseDir : posBaseDir;
+			var force = GetEffectiveThrustInDirection(thrustDir);
+			var maxAccel = mass > 0 ? force / mass : 0;
+			var gravityResistAccel = signedGravity < -0.1 ? -signedGravity : 0;
+			var headroom = Math.Max(0, maxSpeed - totalSpeed);
+
+			//If we are within 0.25 m/s of MaxSpeed, only allow enough thrust to counteract gravity (or drift in zero-g).
+			if (headroom <= 0.25) {
+
+				float holdStrength = (maxAccel > 0 && gravityResistAccel > 0 && signedVelocity <= 0.5)
+					? (float)MathHelper.Clamp(gravityResistAccel / maxAccel, 0.0001, 1.0)
+					: 0.0001f;
+				SetReferenceAxisThrust(refDir, true, invert, Math.Min(strength, holdStrength));
+				return;
+
+			}
+
+			//Taper thrust as speed approaches MaxSpeed so a 15-tick (0.25s) burst cannot overshoot MaxSpeed.
+			if (maxAccel > 0) {
+
+				var desiredNetAccel = headroom / 0.3;
+				var allowedAccel = desiredNetAccel + gravityResistAccel;
+				float maxAllowedStrength = (float)MathHelper.Clamp(allowedAccel / maxAccel, 0.0001, 1.0);
+
+				if (strength > maxAllowedStrength)
+					SetReferenceAxisThrust(refDir, true, invert, maxAllowedStrength);
+
+			}
+
+		}
+
+		private void SetReferenceAxisThrust(Direction refDir, bool control, bool invert, float strength) {
+
+			if (refDir == Direction.Right)
+				_thrustToApply.SetX(control, invert, strength, _orientation);
+			else if (refDir == Direction.Up)
+				_thrustToApply.SetY(control, invert, strength, _orientation);
+			else if (refDir == Direction.Forward)
+				_thrustToApply.SetZ(control, invert, strength, _orientation);
 
 		}
 
